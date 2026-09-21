@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
-import { pdfjs, loadOptions } from './pdfjs';
+import { pdfjs, loadOptions, tieneOperadorDeImagen } from './pdfjs';
 import { makeTextPdf, makeImagePdf } from './fixtures';
 
 /** Texto de prueba que supera holgadamente el umbral de 100 caracteres. */
@@ -15,15 +15,7 @@ async function inspeccionar(data: ArrayBuffer, pagina = 1) {
     .join('')
     .trim().length;
   const ops = await page.getOperatorList();
-  // `paintJpegXObject` que traia el plan no existe en pdfjs-dist 4.10.38:
-  // ni en los tipos ni en tiempo de ejecucion (`OPS.paintJpegXObject` es
-  // `undefined`, asi que la comparacion nunca podria ser cierta). Incluirlo
-  // rompia `tsc --noEmit`, que es lo que corre `npm run build`.
-  const tieneImagen = ops.fnArray.some(
-    (fn: number) =>
-      fn === pdfjs.OPS.paintImageXObject ||
-      fn === pdfjs.OPS.paintInlineImageXObject
-  );
+  const tieneImagen = tieneOperadorDeImagen(ops.fnArray);
   await doc.destroy();
   return { charCount, tieneImagen };
 }

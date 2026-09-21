@@ -18,6 +18,42 @@ export function configureWorker(url: string): void {
   pdfjsLib.GlobalWorkerOptions.workerSrc = url;
 }
 
+/**
+ * Opcodes de PDF.js que pintan contenido rasterizado.
+ *
+ * El conjunto se deriva **por nombre**, no enumerando constantes a mano, por
+ * dos razones aprendidas a golpes:
+ *
+ * 1. Una constante inexistente rompe `tsc --noEmit` y por tanto `npm run
+ *    build`. Ocurrió con `paintJpegXObject`, que no existe en pdfjs-dist 4.x.
+ *    Derivar por nombre no puede fallar así.
+ * 2. Enumerar a mano deja huecos. La lista escrita a ojo omitía
+ *    `paintImageMaskXObject`, y **los escáneres de documentos producen
+ *    imágenes bitonales que PDF codifica justamente como máscaras**: una tesis
+ *    escaneada real se habría clasificado como `vacia` en vez de `escaneado`,
+ *    diciéndole al usuario que su documento está vacío en lugar de ofrecerle
+ *    el OCR.
+ *
+ * En pdfjs-dist 4.10.38 esto resuelve a 8 opcodes (83–90).
+ */
+const OPS_DE_IMAGEN: ReadonlySet<number> = new Set(
+  Object.entries(pdfjsLib.OPS)
+    .filter(([nombre]) => /^paint.*Image/.test(nombre))
+    .map(([, codigo]) => codigo as number)
+);
+
+/**
+ * ¿La lista de operadores de una página pinta algún contenido rasterizado?
+ *
+ * Se prefiere el falso positivo al falso negativo: solo se consulta cuando la
+ * página ya tiene poco texto, así que clasificar de más como «escaneada»
+ * ofrece OCR innecesariamente —inocuo—, mientras que clasificar de menos le
+ * dice al usuario que su escaneo está vacío —caro y confuso—.
+ */
+export function tieneOperadorDeImagen(fnArray: readonly number[]): boolean {
+  return fnArray.some((fn) => OPS_DE_IMAGEN.has(fn));
+}
+
 /** Opciones comunes de carga. */
 export function loadOptions(data: ArrayBuffer) {
   return {
