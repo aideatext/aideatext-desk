@@ -4,7 +4,7 @@
 
 **Goal:** Un tesista sube **un solo minuto** de su grabación y recibe la transcripción real de Azure, con comprobante de borrado — sin pagar, sin cuenta, y sin que el resto de su audio salga de su computadora.
 
-**Architecture:** El navegador decodifica el audio, recorta el minuto elegido y lo codifica a WAV; **solo ese minuto se sube**, con una URL firmada, directo a Blob Storage. Azure Functions orquesta la transcripción por lote y borra todo al entregar. No hay pagos: esto es la rampa de confianza que alimenta los trabajos de pago del Plan 2b.
+**Architecture:** El navegador decodifica el audio, recorta el minuto elegido y lo codifica a WAV; **solo ese minuto se sube**, con una URL firmada, directo a Blob Storage. Azure Functions orquesta la transcripción por lote y borra todo al entregar. **La API vive fuera de `connect-src 'self'`** — ver la decisión arquitectónica en Global Constraints; ponerla dentro desactivaría en silencio la garantía que la landing demuestra en vivo. No hay pagos: esto es la rampa de confianza que alimenta los trabajos de pago del Plan 2b.
 
 **Tech Stack:** TypeScript · Azure Functions v4 (Node 22) · Azure Blob Storage + SAS · Azure AI Speech batch (`api-version=2024-11-15`) · Azure Table Storage · Vitest · Bicep
 
@@ -25,7 +25,42 @@
 - **TypeScript**, nunca JavaScript plano. `noUnusedLocals` está activo: un import sin usar es error de compilación.
 - **Node ≥ 22.12.**
 - **Cero peticiones de red al procesar en el navegador.** El recorte y la codificación a WAV ocurren localmente. La única petición permitida es la subida deliberada del minuto, tras la acción explícita del usuario.
-- ⚠️ **La CSP de producción es `connect-src 'self'`.** La subida a Blob Storage es a `*.blob.core.windows.net`, **otro origen**. Hay que ampliar la directiva a ese host exacto — nunca a `*`. Ver Task 7.
+- 🛑 **DECISIÓN ARQUITECTÓNICA OBLIGATORIA — leer antes de escribir una línea de API.**
+
+  Azure Static Web Apps sirve su API gestionada en `<sitio>/api/*`: **el mismo origen**.
+  Con la CSP actual (`connect-src 'self'`), desplegar esta API **la permitiría sin
+  cambiar una sola línea de política**. El navegador dejaría de imponer nada relevante,
+  el texto de la landing seguiría idéntico, y el botón de autocomprobación seguiría
+  diciendo «El navegador lo impidió» — porque httpbin.org sigue bloqueado.
+
+  **La demostración sobreviviría a la garantía que demuestra.** No es un descuido que se
+  evite con disciplina: lo fuerza el modelo de orígenes de la plataforma.
+
+  **Resolución: CSP por ruta.** `staticwebapp.config.json` admite encabezados distintos
+  por ruta:
+
+  | Ruta | `connect-src` | Promesa |
+  |---|---|---|
+  | `/` (herramienta gratis de PDF) | `'none'` | **Absoluta.** Nada sale, punto |
+  | `/transcribir` (muestra de audio) | la API y el almacenamiento, **por nombre** | Explícita y legible |
+
+  La herramienta gratuita **conserva su garantía intacta**. La página de transcripción
+  declara exactamente a dónde puede hablar, y su copy dice otra cosa —verdadera— en vez
+  de heredar una promesa que ya no cumple.
+
+  ⚠️ **Verificar primero** que Static Web Apps aplica `headers` por entrada de `routes`
+  y no solo en `globalHeaders`. Si no lo hiciera, la alternativa es alojar la API en un
+  **hostname propio** (`api.desk.aideatext.ai`) para que la directiva tenga que nombrarla
+  explícitamente. Lo que **no** es aceptable es que la API viva dentro de `'self'`.
+
+  ⚠️ Y comprobar si `connect-src 'none'` es viable en `/`: el runtime actual no hace
+  ninguna petición `fetch`/XHR, y el worker de PDF.js se rige por `worker-src`, no por
+  `connect-src`. Si es viable, la garantía de la herramienta gratuita pasa de
+  «solo al mismo origen» a **absoluta**.
+
+- ⚠️ La subida a Blob Storage va a `*.blob.core.windows.net`, **otro origen**. En la ruta
+  `/transcribir` hay que nombrar el host **exacto** — nunca `*`, que permitiría subir a
+  cualquier cuenta de almacenamiento de Azure.
 
 ---
 
