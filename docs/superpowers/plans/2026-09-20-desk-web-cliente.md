@@ -1315,13 +1315,29 @@ async function procesar(file: File): Promise<void> {
   }
 }
 
+/** Milisegundos antes de liberar la URL del blob. Ver la nota de abajo. */
+const MS_ANTES_DE_LIBERAR = 60_000;
+
 function descargar(texto: string, nombre: string): void {
   const url = URL.createObjectURL(new Blob([texto], { type: 'text/markdown' }));
   const a = document.createElement('a');
   a.href = url;
   a.download = nombre;
   a.click();
-  URL.revokeObjectURL(url);
+
+  // Se libera con retraso, NO justo despues de `click()`.
+  //
+  // `a.click()` solo *inicia* la descarga; el navegador lee el blob de
+  // forma asincrona. Revocar de inmediato es una carrera: en algunos
+  // navegadores el archivo llega vacio o la descarga se cancela, y el
+  // usuario se queda sin su Markdown sin ningun mensaje de error.
+  //
+  // No se verifica, se elimina. Un navegador headless no puede distinguir
+  // esta carrera -- se comprobo que un control que NUNCA revoca cancela
+  // igual --, asi que confirmarla exigiria una prueba manual en cada
+  // navegador. Sesenta segundos de una URL de blob viva no cuestan nada;
+  // una descarga silenciosamente vacia cuesta el usuario.
+  setTimeout(() => URL.revokeObjectURL(url), MS_ANTES_DE_LIBERAR);
 }
 ```
 
