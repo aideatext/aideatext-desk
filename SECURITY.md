@@ -12,6 +12,25 @@ Este documento es público y describe exactamente qué ocurre con tus archivos.
 - ✗ No usamos tus datos para entrenar modelos
 - ✗ No tenemos `soft delete` activado
 - ✗ No retenemos el nombre de tu archivo
+- ✗ **No almacenamos tu dirección IP** (ver más abajo)
+
+## Lo único que sí guardamos, y por qué
+
+Para evitar que alguien abuse de las muestras gratuitas, necesitamos contar cuántas
+solicita un mismo origen. Lo hacemos **sin almacenar tu dirección IP**:
+
+```
+SHA-256(tu IP + salt rotatorio)  →  un contador
+```
+
+Se guarda el resultado de esa operación, que es irreversible. **El salt rota cada 24
+horas**, lo que invalida automáticamente todos los hashes anteriores.
+
+Consecuencia práctica: en ningún momento existe una dirección IP en nuestra base de
+datos, y el registro de conteo caduca solo, sin que nadie tenga que borrarlo.
+
+Lo declaramos porque una dirección IP es dato personal bajo la LFPDPPP mexicana y el
+RGPD europeo. Guardarla sin decirlo contradiría todo lo demás de este documento.
 
 ## Servicios que no suben nada
 
@@ -92,4 +111,9 @@ intentamos construir.
 
 ## Contacto
 
-Reportes de seguridad: mv@aideatext.com
+- **Reportes de seguridad:** mv@aideatext.com
+- **Casos que exceden los límites del sistema:** first.contact.desk@aideatext.ai
+
+Si tu archivo es demasiado grande, tiene un formato no soportado, o tu investigación
+necesita un tratamiento particular, escríbenos. Se evalúa el caso y se cotiza. El
+sistema nunca te dirá "no se puede" sin ofrecerte una alternativa.

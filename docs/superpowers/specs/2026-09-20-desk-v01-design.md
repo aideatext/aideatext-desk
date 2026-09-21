@@ -103,18 +103,85 @@ Esa última fila motiva el mecanismo de muestra gratuita (§2.3).
 La calidad de un escaneo o de una grabación **no se conoce hasta procesarla**. En vez de
 prometer un porcentaje:
 
-- **PDF escaneado:** se procesa **1 página** gratis y el usuario ve su resultado real
-- **Audio:** se transcriben los **primeros 2 minutos** gratis
+- **PDF escaneado:** **1 página** gratis
+- **Audio:** **1 minuto** gratis
 
-Resuelve dos problemas a la vez:
+**El usuario elige cuál**, y la interfaz le pide explícitamente el fragmento *más
+difícil*:
+
+> *"Sube el minuto más complejo de tu grabación — donde varias personas hablan a la vez,
+> donde hay más ruido de fondo, o donde el audio se escucha peor. Así compruebas la
+> calidad en el peor caso, no en el mejor."*
+
+Y para PDF, la página más deteriorada del escaneo.
+
+**Esto invierte la lógica habitual de las demos.** El efecto es doble:
+
+1. Genera confianza: no estamos escogiendo nuestro mejor caso
+2. **Elimina disputas posteriores:** nadie puede reclamar que no se le advirtió, si el
+   sistema le pidió expresamente su peor fragmento
+
+Resuelve además los dos problemas centrales:
 
 | Problema | Cómo |
 |---|---|
-| Calidad desconocida | Ve su resultado antes de pagar |
-| Desconfianza | Entrega 1 página o 2 minutos, no su tesis completa |
+| Calidad desconocida | Ve su resultado real antes de pagar |
+| Desconfianza | Entrega 1 página o 1 minuto, no su tesis completa |
 
 Es una **escalera de confianza**: herramienta sin subida → muestra pequeña → trabajo
 completo.
+
+### 2.4 Desbordamiento: todo lo que excede los límites
+
+Cualquier caso fuera de los límites técnicos se **deriva a correo**, no se rechaza:
+
+- Video demasiado grande para ffmpeg.wasm (memoria del navegador)
+- Audio de más de 5 h o más de 500 MB
+- PDF escaneado con anotaciones manuscritas, ecuaciones o tablas complejas
+- Volumen institucional (una cohorte completa)
+- Cualquier formato no soportado
+
+> **first.contact.desk@aideatext.ai** — se evalúa el caso y se cotiza a medida.
+
+Esto convierte el límite técnico en entrada al **carril asistido**, que es el de mayor
+margen. Un fallo no es una venta perdida: es una venta más grande que necesita una
+persona.
+
+La interfaz nunca dice "no se puede". Dice "esto requiere revisión, escríbenos".
+
+### 2.5 Anti-abuso
+
+**Riesgo:** subir una entrevista en trozos de 1 minuto para obtener la transcripción
+completa gratis.
+
+**Evaluación: riesgo bajo, por economía.** Robar 6 horas en trozos de 1 minuto exige
+360 subidas, cada una cortando el archivo a mano y resolviendo un desafío. Son varias
+horas de trabajo para ahorrar $8 USD. **El abuso cuesta más que pagar.**
+
+Tres capas, suficientes para v01:
+
+| Capa | Mecanismo |
+|---|---|
+| 1 | **Límite de 1 minuto / 1 página.** La barrera principal |
+| 2 | **Cloudflare Turnstile** — gratis, invisible, sin fricción para el usuario |
+| 3 | **Límite por hash de IP** — máximo 3 muestras por origen cada 24 h |
+
+**La IP no se almacena.** Se guarda únicamente:
+
+```
+SHA-256(IP + salt_rotatorio)  →  contador
+```
+
+El salt rota cada 24 horas, lo que **invalida los hashes anteriores de forma
+automática**: caducidad sin borrado que administrar, y en ningún momento existe una
+dirección IP en la base de datos.
+
+Debe declararse en `SECURITY.md`. Una IP es dato personal bajo la LFPDPPP mexicana y el
+RGPD; guardarla sin declararlo destruiría el argumento central del producto.
+
+**Descartado para v01:** rotación de proveedor de captcha. Es complejidad que se
+justifica ante un atacante determinado, y todavía no existe. Se añaden capas cuando haya
+evidencia de abuso real, no antes.
 
 ### Componentes y costo
 
@@ -272,6 +339,22 @@ material.
 | C | EE.UU. / resto | **$19 USD** | $0.18 | 100× |
 
 Ancla de venta permanente: **Rev cobra $90 USD/hora. DESK, $8.**
+
+### Mínimo de cobro: 30 minutos
+
+**Razón: las comisiones de pasarela, no la avaricia.** Stripe México cobra
+aproximadamente 3.6% + $3 MXN por transacción con tarjeta nacional:
+
+| Monto | Comisión aprox. | % consumido |
+|---|---|---|
+| $1 USD (~20 MXN) | ~3.7 MXN | **18%** — inviable |
+| $4 USD (~80 MXN) | ~6 MXN | 7.5% — aceptable |
+
+Por debajo de ~$3 USD la transacción deja de tener sentido económico. El mínimo de
+30 minutos ($4 en nivel A) sitúa la operación más pequeña en terreno viable.
+
+Entrevistas de menos de 30 minutos se cobran como 30. Debe mostrarse antes de pagar,
+nunca como sorpresa en el checkout.
 
 ### Mecánica de localización
 
@@ -448,13 +531,23 @@ borre después.
 
 ## 7. Pendientes antes de implementar
 
-| # | Pendiente | Bloquea |
-|---|---|---|
-| 1 | Confirmar lenguaje de API (Node/TS asumido) | Plan de implementación |
-| 2 | Verificar USD como moneda de liquidación en Stripe | Configuración de precios |
-| 3 | Decidir región de datos (México Central / Brasil Sur) | `infra/main.bicep` |
-| 4 | Confirmar límites de batch vs. transcripción rápida | Validación de subida |
-| 5 | Verificar vínculo vivo con UAM | Lista de prospección |
+| # | Pendiente | Responsable | Bloquea |
+|---|---|---|---|
+| 1 | Confirmar lenguaje de API (Node/TS asumido) | Manuel | Plan de implementación |
+| 2 | Verificar USD como moneda de liquidación en Stripe | Manuel | Configuración de precios |
+| 3 | Confirmar mínimo de cobro de 30 min (propuesto) | Manuel | Función `quote` |
+| 4 | Decidir región de datos (México Central / Brasil Sur) | Por verificar | `infra/main.bicep` |
+| 5 | Confirmar límites de batch vs. transcripción rápida | Por verificar | Validación de subida |
+| 6 | Verificar vínculo vivo con UAM | Manuel | Lista de prospección |
+| 7 | Alta del buzón `first.contact.desk@aideatext.ai` | Manuel | Desbordamiento (§2.4) |
+
+### Decisiones cerradas en esta sesión
+
+- Muestra gratuita: **1 minuto / 1 página**, elegidos por el usuario, solicitando
+  expresamente el fragmento más difícil (§2.3)
+- Desbordamiento → **first.contact.desk@aideatext.ai** (§2.4)
+- Anti-abuso: límite + Turnstile + **hash de IP con salt rotatorio**, nunca la IP (§2.5)
+- Rotación de proveedor de captcha: **descartada en v01**
 
 ## 8. Fuera de alcance en v01
 
