@@ -35,6 +35,13 @@ zona.addEventListener('drop', (e) => {
 
 input.addEventListener('change', () => {
   const file = input.files?.[0];
+  // Se limpia el valor SIEMPRE, antes de procesar. Un input de archivo no
+  // dispara `change` si el usuario vuelve a elegir el mismo archivo, asi
+  // que sin esto el reintento tras un error no hace absolutamente nada:
+  // el usuario hace clic, elige su tesis otra vez, y la pantalla no
+  // cambia. Es el mismo callejon silencioso del boton mudo, entrando por
+  // otra puerta -- y justo en el camino de salida del error.
+  input.value = '';
   if (file) void procesar(file);
 });
 
@@ -64,8 +71,8 @@ async function procesar(file: File): Promise<void> {
           descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
         } catch {
           salida.innerHTML = `
-            <p>Algo fallo al convertir este documento.</p>
-            <p>Escribenos a
+            <p>Algo falló al convertir este documento.</p>
+            <p>Escríbenos a
                <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
                y lo revisamos contigo.</p>`;
         }

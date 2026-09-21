@@ -19,6 +19,70 @@ describe('renderDiagnosis', () => {
     expect(renderDiagnosis(base({}))).toContain('Descargar Markdown');
   });
 
+  // Construye paginas de verdad en vez de fiarse de `pageCount`: la
+  // aritmetica del informe es justo lo que se esta probando, asi que el
+  // fixture no puede darla por buena.
+  const paginas = (
+    receta: Array<[PdfDiagnosis['pages'][number]['kind'], number]>
+  ): PdfDiagnosis['pages'] => {
+    const out: PdfDiagnosis['pages'] = [];
+    for (const [kind, cuantas] of receta) {
+      for (let i = 0; i < cuantas; i++) {
+        out.push({
+          pageNumber: out.length + 1,
+          kind,
+          charCount: kind === 'texto' ? 500 : 0,
+        });
+      }
+    }
+    return out;
+  };
+
+  // El documento de referencia del plan: una tesis de 312 paginas con 100
+  // separadores en blanco. `resumirPaginas` la resume como 'texto', porque
+  // decide por presencia y los blancos son normales en una tesis -- su
+  // docblock lo dice con todas las letras. Antes el informe decia «312
+  // paginas, TODAS con texto extraible» y el .md entregado traia 212
+  // encabezados `## Pagina` con huecos en la numeracion. En un producto
+  // cuyo argumento es que puedes comprobar lo que afirma, que lo dicho y
+  // lo entregado no cuadren es lo unico que no puede pasar.
+  it('no cuenta las paginas en blanco como paginas con texto', () => {
+    const html = renderDiagnosis(
+      base({
+        pageCount: 312,
+        pages: paginas([
+          ['texto', 212],
+          ['vacia', 100],
+        ]),
+      })
+    );
+    expect(html).toContain('212 con texto');
+    expect(html).toContain('100 en blanco');
+    expect(html.toLowerCase()).not.toContain('todas con texto');
+  });
+
+  // La misma confusion en la otra rama que admite blancos. Aqui era peor
+  // que un adjetivo de mas: `pageCount - escaneadas` da un numero
+  // directamente falso. Con 2 de texto, 1 escaneada y 1 en blanco decia
+  // «3 con texto».
+  it('tampoco los cuenta como texto en un documento mixto', () => {
+    const html = renderDiagnosis(
+      base({
+        overall: 'mixto',
+        pageCount: 4,
+        pages: paginas([
+          ['texto', 2],
+          ['escaneado', 1],
+          ['vacia', 1],
+        ]),
+      })
+    );
+    expect(html).toContain('2 con texto');
+    expect(html).toContain('1 escaneadas');
+    expect(html).toContain('1 en blanco');
+    expect(html).not.toContain('3 con texto');
+  });
+
   it('nunca dice "no se puede" ante un PDF escaneado', () => {
     const html = renderDiagnosis(
       base({ overall: 'escaneado', convertibleInBrowser: false })

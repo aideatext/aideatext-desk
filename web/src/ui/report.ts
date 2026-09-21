@@ -10,10 +10,19 @@ const CONTACTO = 'first.contact.desk@aideatext.ai';
  */
 export function renderDiagnosis(d: PdfDiagnosis): string {
   const escaneadas = d.pages.filter((p) => p.kind === 'escaneado').length;
+  // Se CUENTAN las de texto, no se restan las escaneadas. `pageCount -
+  // escaneadas` metia las paginas en blanco en el saco de "con texto", y
+  // `resumirPaginas` permite blancos tanto en `texto` como en `mixto` por
+  // diseno: los separadores de capitulo y versos vacios son normales en
+  // una tesis. Es la misma confusion de pagesBlank, ahora en la interfaz.
+  const conTexto = d.pages.filter((p) => p.kind === 'texto').length;
+  const enBlanco = d.pages.filter((p) => p.kind === 'vacia').length;
 
   if (d.convertibleInBrowser && d.overall === 'texto') {
     return `
-      <p><strong>${d.pageCount}</strong> páginas, todas con texto extraíble.</p>
+      <p><strong>${d.pageCount}</strong> páginas: ${conTexto} con texto extraíble${
+        enBlanco > 0 ? `, ${enBlanco} en blanco` : ''
+      }.</p>
       <p>Se convierte aquí mismo, sin subir nada.</p>
       <button id="descargar">Descargar Markdown</button>`;
   }
@@ -21,7 +30,9 @@ export function renderDiagnosis(d: PdfDiagnosis): string {
   if (d.overall === 'mixto') {
     return `
       <p><strong>${d.pageCount}</strong> páginas: documento <strong>mixto</strong>.</p>
-      <p>${d.pageCount - escaneadas} con texto, ${escaneadas} escaneadas.</p>
+      <p>${conTexto} con texto, ${escaneadas} escaneadas${
+        enBlanco > 0 ? `, ${enBlanco} en blanco` : ''
+      }.</p>
       <p>Convertimos ahora las que tienen texto. Para las escaneadas hace
          falta OCR en servidor.</p>
       <button id="descargar">Descargar Markdown</button>
