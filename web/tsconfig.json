@@ -11,7 +11,12 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vitest/globals"]
+    // "vite/client" declara los modulos con sufijo de Vite, entre ellos
+    // `*?url`. Sin el, el import del worker en main.ts es TS2307 y
+    // `npm run build` no pasa de `tsc --noEmit`. Tiene que ir en este
+    // array explicito: `types` desactiva la inclusion automatica, asi que
+    // basta con que el paquete este instalado.
+    "types": ["vitest/globals", "vite/client"]
   },
   "include": ["src"]
 }
