@@ -29,11 +29,27 @@ export function renderDiagnosis(d: PdfDiagnosis): string {
          <a href="mailto:${CONTACTO}">${CONTACTO}</a></p>`;
   }
 
+  if (d.overall === 'escaneado') {
+    return `
+      <p><strong>${d.pageCount}</strong> páginas escaneadas, sin capa de texto.</p>
+      <p>Este documento necesita OCR, que se procesa en servidor.
+         Puedes probar <strong>una página gratis</strong> antes de decidir:
+         elige la peor escaneada, para ver la calidad en el caso más difícil.</p>
+      <p>Escríbenos a <a href="mailto:${CONTACTO}">${CONTACTO}</a>
+         y evaluamos tu caso.</p>`;
+  }
+
+  // `vacio` tiene su propio mensaje y NO ofrece OCR de pago.
+  //
+  // Un documento sin texto Y sin imagenes no tiene nada que reconocer: el
+  // OCR no le serviria de nada y cobrarselo seria vender humo. Fundir esta
+  // rama con `escaneado` reintroducia en la interfaz justo la confusion que
+  // la Task 4 pago una ronda por separar en los datos (`pagesScanned` vs
+  // `pagesBlank`). Un arreglo en la capa de datos no sirve si la capa de
+  // presentacion vuelve a mezclarlo.
   return `
-    <p><strong>${d.pageCount}</strong> páginas escaneadas, sin capa de texto.</p>
-    <p>Este documento necesita OCR, que se procesa en servidor.
-       Puedes probar <strong>una página gratis</strong> antes de decidir:
-       elige la peor escaneada, para ver la calidad en el caso más difícil.</p>
+    <p><strong>${d.pageCount}</strong> páginas, sin texto ni imágenes.</p>
+    <p>Puede que el archivo esté dañado, protegido, o realmente vacío.</p>
     <p>Escríbenos a <a href="mailto:${CONTACTO}">${CONTACTO}</a>
-       y evaluamos tu caso.</p>`;
+       y lo revisamos contigo.</p>`;
 }

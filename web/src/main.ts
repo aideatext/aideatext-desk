@@ -48,8 +48,27 @@ async function procesar(file: File): Promise<void> {
     const boton = document.getElementById('descargar');
     if (boton) {
       boton.addEventListener('click', async () => {
-        const r = await pdfToMarkdown(data);
-        descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
+        // `catch` PROPIO, no el del `try` de abajo: el rechazo de un
+        // callback asincrono no se propaga al try que lo registro.
+        //
+        // Sin esto, si `pdfToMarkdown` falla el usuario hace clic y NO
+        // OCURRE NADA: ni archivo, ni mensaje, ni cambio en pantalla. Es
+        // el callejon sin salida mas silencioso posible, justo lo que la
+        // regla de «nunca decir no se puede» existe para evitar.
+        //
+        // Y no es hipotetico: `sha256Hex` usa `crypto.subtle`, que no
+        // existe fuera de un contexto seguro. Servir con `vite --host`
+        // sobre una IP de red local deja el boton mudo.
+        try {
+          const r = await pdfToMarkdown(data);
+          descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
+        } catch {
+          salida.innerHTML = `
+            <p>Algo fallo al convertir este documento.</p>
+            <p>Escribenos a
+               <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+               y lo revisamos contigo.</p>`;
+        }
       });
     }
   } catch {
