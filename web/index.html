@@ -22,6 +22,10 @@
        probablemente el canal que mas enlaces mueve entre tesistas, asi que
        estas cuatro lineas importan mas que la landing entera en escritorio.
 
+       Hablan solo del servicio 1, que es el unico construido. Anunciar el
+       audio o la traduccion en la tarjeta que viaja por WhatsApp seria
+       prometer lo que todavia no existe.
+
        La URL de og:image es ABSOLUTA a proposito: ningun raspador social
        resuelve rutas relativas.
 
@@ -75,7 +79,7 @@
     html, body { height: 100%; }
 
     /* ===== EL ARMAZON =====
-       Cuatro filas: barra, titular, columnas, pie. Solo la tercera crece
+       Tres filas: encabezado, columnas, pie. Solo la de en medio crece
        (`minmax(0, 1fr)`), y el `0` de ese minmax no es decorativo: sin el,
        una fila de rejilla no baja de su contenido y las columnas empujarian
        la pagina hacia abajo en cuanto el resultado de una conversion se
@@ -93,15 +97,15 @@
       margin: 0;
       padding: 0 clamp(.7rem, 1.8vw, 1.5rem);
       display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      grid-template-rows: auto minmax(0, 1fr) auto;
       height: 100vh;
       height: 100dvh;
       overflow: hidden;
     }
 
     h1, h2, h3 { letter-spacing: -.01em; }
-    h1 { font-size: clamp(1.15rem, 2.05vw, 1.55rem); line-height: 1.2; margin: 0 0 .2rem; }
-    h2 { font-size: 1rem; margin: 0 0 .45rem; }
+    h1 { font-size: clamp(1.1rem, 1.9vw, 1.45rem); line-height: 1.2; margin: 0; }
+    h2 { font-size: 1rem; margin: 0 0 .35rem; }
     h3 { font-size: .93rem; margin: .5rem 0 .2rem; }
     p { margin: 0 0 .5rem; }
     a { color: var(--acento); }
@@ -118,44 +122,47 @@
       overflow-wrap: anywhere;
     }
 
-    /* -- Barra ------------------------------------------------- */
+    /* -- Encabezado -------------------------------------------- */
 
+    /* Los dos logotipos van juntos, a la izquierda y al mismo alto, como
+       pidio la especificacion. 34px es el alto minimo al que el logotipo
+       de NVIDIA Inception sigue siendo legible: por debajo, la palabra
+       «Inception» se convierte en una mancha verde. */
     .barra {
       display: flex;
       align-items: center;
-      gap: .5rem;
-      padding: .4rem 0;
+      gap: .55rem .8rem;
+      flex-wrap: wrap;
+      padding: .4rem 0 .35rem;
       border-bottom: 1px solid var(--linea);
     }
 
-    .barra .logo { width: 26px; height: 26px; display: block; flex: none; }
-    .barra .nombre { font-weight: 700; letter-spacing: .04em; }
-    .barra .sub { color: var(--tenue); font-size: .85rem; }
+    .logos { display: flex; align-items: center; gap: .6rem; flex: none; }
+    .logos .aideatext { width: 34px; height: 34px; display: block; }
+    .logos .nvidia { height: 34px; width: auto; display: block; }
 
-    /* La insignia da credibilidad; no compite con la herramienta. De ahi el
-       tamano pequeno y el margen automatico que la manda al otro extremo. */
-    .insignia { margin-left: auto; display: flex; align-items: center; }
-    .insignia img { height: 28px; width: auto; display: block; }
+    .titulo { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+    .titulo .nombre { font-weight: 800; letter-spacing: .05em; }
+    .titulo .frase { color: var(--tenue); font-size: .95rem; }
 
-    /* -- Titular ----------------------------------------------- */
-
-    .titular { padding: .5rem 0 .45rem; }
-
-    .apoyo {
-      color: var(--tenue);
-      font-size: .93rem;
+    /* La promesa de la especificacion. Va arriba, donde se lee, y no
+       escondida en el pie: es la respuesta anticipada a cada limite que
+       esta pagina declara. */
+    .lema {
+      width: 100%;
       margin: 0;
-      max-width: 80ch;
+      font-size: .88rem;
+      color: var(--acento);
     }
 
     /* -- Columnas ---------------------------------------------- */
 
     .columnas {
       display: grid;
-      grid-template-columns: 1.15fr .9fr 1fr;
+      grid-template-columns: 1.15fr 1fr 1fr;
       gap: .9rem;
       min-height: 0;
-      padding: .55rem 0;
+      padding: .5rem 0;
     }
 
     .col {
@@ -207,7 +214,7 @@
 
     #resultado button { margin: .25rem 0 .5rem; }
 
-    button {
+    button, .boton {
       font: inherit;
       font-size: .92rem;
       font-weight: 600;
@@ -222,7 +229,13 @@
       white-space: normal;
     }
 
-    button:hover { background: #0e3d21; }
+    .boton {
+      display: inline-block;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    button:hover, .boton:hover { background: #0e3d21; color: #fff; }
     button:disabled { opacity: .6; cursor: progress; }
 
     /* -- Recuadro de ahorro ------------------------------------ */
@@ -253,30 +266,101 @@
 
     .apunte { color: var(--tenue); font-size: .85rem; }
 
-    /* -- Precios y servicios ----------------------------------- */
+    /* -- Etiquetas de estado ----------------------------------- */
+
+    .gratis, .pronto {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0 .45rem;
+      font-size: .78rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
 
     .gratis {
-      display: inline-block;
       background: var(--acento-suave);
       color: var(--acento);
       border: 1px solid #c3ddcc;
-      border-radius: 999px;
-      padding: 0 .45rem;
-      font-size: .8rem;
-      font-weight: 700;
     }
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin: .2rem 0 .45rem;
+    /* Las columnas 2 y 3 no estan construidas, y la pagina lo dice en la
+       cabecera de cada una. Cobrar por una lista de espera disfrazada de
+       producto disponible seria la forma mas rapida de perder al visitante
+       que vino porque aqui las cosas se pueden comprobar. */
+    .pronto {
+      background: var(--duda-suave);
+      color: var(--duda);
+      border: 1px solid #e6d7a8;
+    }
+
+    /* -- Precios ----------------------------------------------- */
+
+    .precios {
+      margin: .35rem 0 .4rem;
+      padding: .45rem .55rem;
+      border: 1px solid var(--linea);
+      border-radius: 8px;
+      background: var(--papel);
+      font-size: .88rem;
+    }
+
+    .precios > div + div { margin-top: .35rem; }
+    .precios dt { color: var(--tenue); font-size: .84rem; }
+    .precios dd { margin: 0; }
+    .precios .cifra { font-weight: 700; font-size: 1rem; }
+    .precios .hora { color: var(--tenue); font-weight: 400; font-size: .84rem; }
+
+    .condicion { font-size: .86rem; margin-bottom: .45rem; }
+
+    /* -- Comprobacion de tarifa -------------------------------- */
+
+    /* Sin `<form>`, a proposito: la CSP declara `form-action 'none'`, asi
+       que un envio no llegaria a ninguna parte. Aqui no hay envio. El
+       correo se compara contra una lista en tu propio navegador y no sale
+       de el; el alta real ocurre despues, por correo, entre personas. */
+    .tarifa { margin-bottom: .5rem; }
+
+    .tarifa label {
+      display: block;
+      font-size: .85rem;
+      color: var(--tenue);
+      margin-bottom: .2rem;
+    }
+
+    .tarifa input {
+      font: inherit;
       font-size: .9rem;
+      width: 100%;
+      padding: .35rem .5rem;
+      border: 1px solid var(--linea);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--tinta);
     }
 
-    th, td { border-bottom: 1px solid var(--linea); padding: .25rem .3rem; text-align: left; }
-    th { font-size: .82rem; color: var(--tenue); font-weight: 600; }
-    td + td, th + th { text-align: right; }
-    tr.nuestro td { font-weight: 700; color: var(--acento); }
+    .tarifa input:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
+
+    .tarifa-veredicto:empty { display: none; }
+
+    .tarifa-veredicto {
+      font-size: .85rem;
+      margin: .35rem 0 0;
+      padding: .35rem .5rem;
+      border-radius: 8px;
+      border: 1px solid var(--linea);
+    }
+
+    .tarifa-veredicto.bien {
+      color: var(--acento);
+      background: var(--acento-suave);
+      border-color: #c3ddcc;
+    }
+
+    .tarifa-veredicto.duda {
+      color: var(--duda);
+      background: var(--duda-suave);
+      border-color: #e6d7a8;
+    }
 
     .correo { overflow-wrap: anywhere; }
 
@@ -308,14 +392,14 @@
 
     footer {
       border-top: 1px solid var(--linea);
-      padding: .35rem 0 .5rem;
+      padding: .35rem 0 .45rem;
       color: var(--tenue);
       font-size: .85rem;
-      /* Si el visitante abre los tres plegados a la vez, el pie crece. Se
+      /* Si el visitante abre los plegados a la vez, el pie crece. Se
          desplaza dentro de si mismo en lugar de empujar la pagina: el tope
          de altura es lo que impide que un `<details>` abierto rompa el
          criterio de no-scroll. */
-      max-height: 42vh;
+      max-height: 45vh;
       overflow: auto;
     }
 
@@ -327,6 +411,14 @@
     }
 
     footer p { margin: 0; }
+
+    /* El aviso de marca de NVIDIA, textual y en ingles como exige su
+       programa. Pequeno pero presente: es una obligacion, no un adorno. */
+    .marca {
+      margin-top: .3rem;
+      font-size: .74rem;
+      color: var(--tenue);
+    }
 
     /* ===== Apilado en una columna =====
        Por debajo de 900px no se pelea por el alto: se apila y se permite el
@@ -364,40 +456,53 @@
 </head>
 <body>
 
-  <!-- ===== Barra ===== -->
+  <!-- ===== Encabezado ===== -->
   <header class="barra">
-    <img class="logo" src="/img/Logo64x64.png" width="26" height="26"
-         alt="" />
-    <span class="nombre">DESK</span>
-    <span class="sub">· por AIdeaText</span>
-    <span class="insignia">
-      <img src="/img/nvidia-inception-color.svg" width="65" height="28"
+    <span class="logos">
+      <img class="aideatext" src="/img/Logo_300x300.png" width="34" height="34"
+           alt="AIdeaText" />
+      <img class="nvidia" src="/img/nvidia-inception-color.svg" width="79" height="34"
            alt="AIdeaText es miembro del programa NVIDIA Inception" />
     </span>
-  </header>
 
-  <!-- ===== Titular =====
-       Empieza por el beneficio. Casi nadie sabe que existe una extension
-       .md, y nadie se levanta queriendo Markdown: se levanta queriendo que
-       la IA lea su tesis entera y que su trabajo inedito no acabe en el
-       servidor de un desconocido. La palabra «Markdown» aparece despues, y
-       explicada. -->
-  <section class="titular">
-    <h1>Pasa tu tesis a la IA completa, sin subirla a ningún servidor</h1>
-    <p class="apoyo">
-      DESK saca el texto de tu PDF y te lo entrega como un archivo
-      <strong>.md</strong> —formato Markdown: texto plano, sin capas de
-      maquetación— que ChatGPT, Claude o Gemini abren entero. La conversión
-      ocurre aquí, en esta pestaña, y al terminar te decimos cuántos tokens
-      cuesta cada versión de tu archivo.
-    </p>
-  </section>
+    <h1 class="titulo">
+      <span class="nombre">DESK</span>
+      <span class="frase">el taller de formatos de tu tesis: conviértela, escúchala, tradúcela.</span>
+    </h1>
+
+    <p class="lema">Ningún límite es un «no se puede»: escríbenos y lo resolvemos.</p>
+  </header>
 
   <main class="columnas">
 
-    <!-- ===== 1. La herramienta ===== -->
+    <!-- ===== 1. PDF a Markdown: la herramienta de verdad =====
+         Corre entera en el navegador y no nos cuesta un centavo, asi que
+         no se recorta. La especificacion pedia una «prueba gratuita de dos
+         paginas»; limitar aqui seria escasez inventada, que empeora el
+         producto sin ahorrar nada y rompe la confianza que alimenta a las
+         otras dos columnas. El dueño acepto la correccion. -->
     <div class="col">
-      <h2><span class="paso">1.</span> Tu PDF</h2>
+      <h2>
+        <span class="paso">1.</span> PDF → Markdown
+        <span class="gratis">gratis y completo</span>
+      </h2>
+
+      <!-- El caso de uso de la especificacion, MENOS la frase sobre
+           tokens. Se midio con un archivo real en esta misma pagina: el
+           Markdown salio de ~3,579 tokens contra los ~3,526 del texto del
+           PDF, un 1.5% MAS grande. «Consumiran menos tokens» era falso, y
+           el resto del argumento no lo necesita. -->
+      <p>
+        Un PDF describe cómo se <em>ve</em> una página —posición de cada
+        carácter, fuente, coordenadas—, no la estructura lógica del
+        contenido; Markdown sí preserva la jerarquía: títulos, listas,
+        tablas, énfasis. Eso hace el contenido procesable, no solo
+        visible. Un PDF mal extraído llega con saltos de línea
+        absurdos, columnas mezcladas, encabezados y pies repetidos y texto
+        en el orden equivocado, y eso degrada la calidad de cualquier
+        análisis que hagas después con ChatGPT, Claude o Gemini. Es un
+        problema de calidad, no de tamaño.
+      </p>
 
       <div id="zona">
         <p><strong>Arrastra tu PDF aquí</strong>, o haz clic para elegirlo</p>
@@ -405,8 +510,9 @@
              son los ~28px que le faltaban a esta columna para mostrar el
              informe y el ahorro sin desplazarse a 640px de alto. -->
         <p class="formatos">
-          Se convierte en esta misma pestaña. Gratis, sin registro y sin
-          límite de uso.
+          El documento <strong>entero</strong>, sin límite de páginas ni
+          registro. Se convierte en esta misma pestaña y no sube a ningún
+          servidor: compruébalo en «Seguridad», abajo.
         </p>
         <input type="file" id="archivo" accept="application/pdf" hidden />
       </div>
@@ -415,96 +521,116 @@
       <div id="ahorro"></div>
     </div>
 
-    <!-- ===== 2. La comprobacion ===== -->
+    <!-- ===== 2. Markdown a audio: todavia no existe ===== -->
     <div class="col">
-      <h2><span class="paso">2.</span> No sube nada</h2>
+      <h2>
+        <span class="paso">2.</span> Markdown → Audio (MP3)
+        <span class="pronto">en construcción</span>
+      </h2>
 
       <p>
-        No recibimos tu tesis, y no podríamos aunque quisiéramos: este sitio
-        declara una política de seguridad (<code>connect-src 'self'</code>)
-        que le prohíbe al navegador enviar datos a otro servidor.
+        Sabemos que te toma entre una y dos horas llegar a la universidad o
+        volver a casa. Leer en el camino —en el metro, en el metrobús— es
+        incómodo; escuchar es sencillo. Aprovecha ese tiempo escuchando tu
+        tesis, tu ensayo o el capítulo del libro que te toca leer esta
+        semana.
       </p>
 
-      <p>No nos creas. Compruébalo:</p>
-
-      <button id="probar-csp" type="button">
-        Intentar enviar datos a un servidor externo
-      </button>
-
-      <div id="resultado-csp"></div>
-
-      <details>
-        <summary>Cómo comprobarlo por tu cuenta</summary>
-        <div class="plegado">
-          <ol>
-            <li>
-              Abre las herramientas de desarrollo (F12), ve a la pestaña
-              <strong>Red</strong> y convierte un PDF. No verás ninguna
-              petición de subida.
-            </li>
-            <li>
-              Pulsa el botón de arriba: intentaremos enviar datos a un
-              servidor externo delante de ti, y verás al navegador
-              impedirlo. La violación queda escrita en tu consola, por él y
-              no por nosotros.
-            </li>
-          </ol>
+      <dl class="precios">
+        <div>
+          <dt>Estudiantes y organizaciones sin fines de lucro</dt>
+          <dd>
+            <span class="cifra">200 MXN</span> por hasta 4 horas de audio
+            <span class="hora">(50 MXN la hora)</span>
+          </dd>
         </div>
-      </details>
+        <div>
+          <dt>Empresas y profesionales</dt>
+          <dd>
+            <span class="cifra">500 MXN</span> por hasta 4 horas de audio
+            <span class="hora">(125 MXN la hora)</span>
+          </dd>
+        </div>
+      </dl>
+
+      <p class="condicion">
+        La tarifa de 200 MXN <strong>exige un correo institucional
+        validado</strong>. Es la condición, y no hay letra chica.
+      </p>
+
+      <div class="tarifa">
+        <label for="correo-audio">¿Tu correo aplica? Escríbelo y te decimos:</label>
+        <input type="email" id="correo-audio" class="correo-tarifa"
+               autocomplete="email" spellcheck="false"
+               placeholder="tucorreo@comunidad.unam.mx" />
+        <p class="tarifa-veredicto" role="status"></p>
+      </div>
+
+      <a class="boton"
+         href="mailto:first.contact.desk@aideatext.ai?subject=Lista%20de%20espera%3A%20Markdown%20a%20audio%20%28MP3%29&amp;body=Hola%3A%0A%0AQuiero%20que%20me%20avisen%20cuando%20est%C3%A9%20listo%20el%20servicio%20de%20Markdown%20a%20audio%20%28MP3%29.%0A%0AQu%C3%A9%20quiero%20escuchar%20%28tesis%2C%20ensayo%2C%20cap%C3%ADtulo%29%3A%0ADuraci%C3%B3n%20aproximada%3A%0AMi%20correo%20institucional%20%28si%20aplica%29%3A%0A">
+        Avísame cuando esté listo
+      </a>
+
+      <p class="apunte">
+        Se abre tu programa de correo con el mensaje escrito. No hay
+        formulario, no hay servidor y no guardamos nada aquí.
+      </p>
     </div>
 
-    <!-- ===== 3. Lo que si cuesta ===== -->
+    <!-- ===== 3. Traduccion en audio: todavia no existe ===== -->
     <div class="col">
-      <h2><span class="paso">3.</span> ¿Escaneado? ¿Entrevistas?</h2>
+      <h2>
+        <span class="paso">3.</span> Traducción ES ↔ EN en audio
+        <span class="pronto">en construcción</span>
+      </h2>
 
-      <h3>Tesis escaneada</h3>
       <p>
-        Si tu PDF es un escaneo no tiene texto que extraer: hace falta OCR, y
-        eso sí se procesa en un servidor. Te procesamos
-        <span class="gratis">una página gratis</span>: elige la peor página
-        escaneada. Preferimos que juzgues con el caso difícil.
+        Te aceptaron la ponencia en un congreso internacional y tienes que
+        exponerla en inglés; o el artículo que ya escribiste en español hay
+        que enviarlo en inglés; o la bibliografía obligatoria está en inglés
+        y la entiendes mucho mejor escuchándola en español. Traducimos y te
+        entregamos el audio en el otro idioma.
       </p>
 
-      <h3>Entrevistas sin transcribir</h3>
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Servicio</th>
-            <th scope="col">Por hora de audio</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Rev</td><td>$90 USD</td></tr>
-          <tr class="nuestro"><td>DESK</td><td>$8 USD</td></tr>
-        </tbody>
-      </table>
-      <p>
-        <span class="gratis">El primer minuto gratis</span>: manda el minuto
-        más difícil, ese donde varias personas hablan a la vez.
-      </p>
-
-      <p class="correo">
-        Escríbenos a
-        <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
-      </p>
-
-      <details>
-        <summary>¿Tu comité de ética pide una ficha de datos?</summary>
-        <div class="plegado">
-          <p>
-            Si entrevistaste a sujetos humanos, tu comité probablemente te
-            exige declarar cómo se tratan esos datos, y la mayoría de los
-            servicios de transcripción no te dan nada que puedas adjuntar.
-          </p>
-          <p>
-            Generamos una <strong>ficha de tratamiento de datos</strong> por
-            cada trabajo: región donde se procesó, tiempo de retención, hora
-            exacta de eliminación, cifrado, y la declaración de que tus datos
-            no se usan para entrenar ningún modelo. Es un anexo que puedes
-            presentar tal cual.
-          </p>
+      <dl class="precios">
+        <div>
+          <dt>Estudiantes y organizaciones sin fines de lucro</dt>
+          <dd>
+            <span class="cifra">200 MXN</span> por hasta 4 horas de audio
+            <span class="hora">(50 MXN la hora)</span>
+          </dd>
         </div>
-      </details>
+        <div>
+          <dt>Empresas y profesionales</dt>
+          <dd>
+            <span class="cifra">500 MXN</span> por hasta 4 horas de audio
+            <span class="hora">(125 MXN la hora)</span>
+          </dd>
+        </div>
+      </dl>
+
+      <p class="condicion">
+        La tarifa de 200 MXN <strong>exige un correo institucional
+        validado</strong>. Es la condición, y no hay letra chica.
+      </p>
+
+      <div class="tarifa">
+        <label for="correo-traduccion">¿Tu correo aplica? Escríbelo y te decimos:</label>
+        <input type="email" id="correo-traduccion" class="correo-tarifa"
+               autocomplete="email" spellcheck="false"
+               placeholder="tucorreo@comunidad.unam.mx" />
+        <p class="tarifa-veredicto" role="status"></p>
+      </div>
+
+      <a class="boton"
+         href="mailto:first.contact.desk@aideatext.ai?subject=Lista%20de%20espera%3A%20traducci%C3%B3n%20ES-EN%20en%20audio&amp;body=Hola%3A%0A%0AQuiero%20que%20me%20avisen%20cuando%20est%C3%A9%20listo%20el%20servicio%20de%20traducci%C3%B3n%20espa%C3%B1ol-ingl%C3%A9s%20en%20audio.%0A%0AQu%C3%A9%20necesito%20traducir%20%28ponencia%2C%20art%C3%ADculo%2C%20bibliograf%C3%ADa%29%3A%0ADirecci%C3%B3n%20%28de%20ES%20a%20EN%2C%20o%20de%20EN%20a%20ES%29%3A%0ADuraci%C3%B3n%20aproximada%3A%0AMi%20correo%20institucional%20%28si%20aplica%29%3A%0A">
+        Avísame cuando esté listo
+      </a>
+
+      <p class="apunte">
+        Se abre tu programa de correo con el mensaje escrito. No hay
+        formulario, no hay servidor y no guardamos nada aquí.
+      </p>
     </div>
 
   </main>
@@ -520,15 +646,58 @@
             texto, un escaneo o una página en blanco. Con las páginas de
             texto arma un Markdown con un encabezado por página, y te lo
             entrega como descarga local. No hay servidor en ese recorrido:
-            no existe ninguna petición que suba tu archivo.
+            no existe ninguna petición que suba tu archivo. Se convierte el
+            documento completo; no hay tope de páginas.
           </p>
           <p>
-            El recuadro de ahorro compara los caracteres del texto extraído
-            del PDF —con su ruido de maquetación— contra los del Markdown
-            generado, estimando un token por cada 4 caracteres. Es el
-            resultado de tu archivo, no un promedio ni una promesa; si no
-            hay ahorro, lo dice.
+            El recuadro de medición compara los caracteres del texto
+            extraído del PDF —con su ruido de maquetación— contra los del
+            Markdown generado, estimando un token por cada 4 caracteres. Es
+            el resultado de tu archivo, no un promedio ni una promesa. A
+            menudo el Markdown sale <em>igual o un poco más grande</em>, y
+            la pantalla lo dice con esas palabras: lo que ganas aquí es
+            estructura, no ahorro de tokens.
           </p>
+          <p>
+            Las columnas 2 y 3 todavía no están construidas. Sus precios ya
+            están cerrados y se publican aquí; el botón solo abre un correo.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Seguridad</summary>
+        <div class="plegado">
+          <h3>No sube nada</h3>
+          <p>
+            No recibimos tu tesis, y no podríamos aunque quisiéramos: este
+            sitio declara una política de seguridad
+            (<code>connect-src 'self'</code>) que le prohíbe al navegador
+            enviar datos a otro servidor.
+          </p>
+
+          <p>No nos creas. Compruébalo:</p>
+
+          <button id="probar-csp" type="button">
+            Intentar enviar datos a un servidor externo
+          </button>
+
+          <div id="resultado-csp"></div>
+
+          <h3>Cómo comprobarlo por tu cuenta</h3>
+          <ol>
+            <li>
+              Abre las herramientas de desarrollo (F12), ve a la pestaña
+              <strong>Red</strong> y convierte un PDF. No verás ninguna
+              petición de subida.
+            </li>
+            <li>
+              Pulsa el botón de arriba: intentaremos enviar datos a un
+              servidor externo delante de ti, y verás al navegador
+              impedirlo. La violación queda escrita en tu consola, por él y
+              no por nosotros.
+            </li>
+          </ol>
         </div>
       </details>
 
@@ -559,11 +728,15 @@
       <a href="https://github.com/aideatext/aideatext-desk">Código del proyecto</a>
       <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos</a>
       <a class="correo" href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
-      <span>Ningún límite es un «no se puede»: escríbenos y lo resolvemos.</span>
     </div>
+
+    <!-- Textual, en una sola linea y en ingles: es el aviso de marca que
+         exige el programa NVIDIA Inception, y se reproduce tal cual. -->
+    <p class="marca">© 2025 NVIDIA, the NVIDIA logo are trademarks and/or registered trademarks of NVIDIA Corporation in the U.S. and other countries.</p>
   </footer>
 
   <script type="module" src="/src/main.ts"></script>
   <script type="module" src="/src/autocomprobacion.entry.ts"></script>
+  <script type="module" src="/src/listaDeEspera.entry.ts"></script>
 </body>
 </html>

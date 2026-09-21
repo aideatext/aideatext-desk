@@ -62,6 +62,15 @@ async function procesar(file: File): Promise<void> {
     const data = await file.arrayBuffer();
     const diagnosis = await diagnosePdf(data);
     salida.innerHTML = renderDiagnosis(diagnosis);
+    // El informe nace DEBAJO de la zona de arrastre, y la columna se
+    // desplaza dentro de si misma para no empujar la pagina. Medido a
+    // 1366x768: la columna dispone de ~615px y su contenido con informe
+    // pasa de 700, asi que sin esta linea el veredicto puede quedar fuera
+    // de la vista y el usuario cree que su clic no hizo nada. El mismo
+    // callejon silencioso del boton mudo, por una tercera puerta.
+    // `block: 'nearest'` desplaza lo justo, y solo el contenedor que hace
+    // falta.
+    salida.scrollIntoView({ block: 'nearest' });
 
     const boton = document.getElementById('descargar');
     if (boton) {

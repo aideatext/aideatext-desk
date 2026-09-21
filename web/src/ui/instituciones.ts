@@ -1,0 +1,153 @@
+/**
+ * ¿Este correo tiene derecho a la tarifa institucional?
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ * POR QUÉ NO SE BUSCA «.edu» DENTRO DE LA CADENA
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * Las universidades mexicanas NO usan `.edu.mx`. El correo general de la
+ * UNAM es `@comunidad.unam.mx`, y `unam.edu` está suspendido. Un patrón
+ * que buscara «.edu» le cobraría la tarifa de empresa (500) a media UNAM,
+ * en silencio y sin que el usuario entendiera por qué.
+ *
+ * Y un `dominio.includes('unam.mx')` —la tentación opuesta— aceptaría
+ * `notunam.mx` y `evil-unam.mx.attacker.com`, que no son la UNAM.
+ *
+ * Por eso la comparación es por SUFIJO DE DOMINIO con frontera de punto:
+ * el dominio coincide si es exactamente la regla, o si termina en punto
+ * más la regla. `comunidad.unam.mx` coincide con `unam.mx`;
+ * `notunam.mx` no.
+ *
+ * Aquí no hay red, ni validación de la cuenta: esto decide qué PRECIO se
+ * le muestra a alguien que escribe su correo. La validación real ocurre
+ * después, por correo, entre personas.
+ */
+
+/**
+ * Sufijos con tarifa institucional. Se guardan sin punto inicial; el
+ * punto lo pone la comparación.
+ *
+ * Los cuatro últimos son genéricos (cubren universidades de fuera de la
+ * lista); los anteriores existen precisamente porque sus instituciones no
+ * caen bajo ningún genérico: `unam.mx`, `uam.mx`, `ipn.mx`, `colmex.mx`,
+ * `ibero.mx` e `iteso.mx` no contienen «edu» por ningún lado.
+ *
+ * Esta lista SIEMPRE estará incompleta, y por eso la interfaz nunca
+ * responde «no». Ver `MENSAJE_NO_ESTA_EN_LA_LISTA`.
+ */
+export const SUFIJOS_INSTITUCIONALES: readonly string[] = [
+  // México
+  'unam.mx',
+  'uam.mx',
+  'ipn.mx',
+  'ciesas.edu.mx',
+  'colmex.mx',
+  'flacso.edu.mx',
+  'ibero.mx',
+  'iteso.mx',
+  // Perú
+  'unife.edu.pe',
+  'pucp.edu.pe',
+  'esan.edu.pe',
+  // Genéricos
+  'edu',
+  'edu.mx',
+  'edu.pe',
+  'ac.uk',
+];
+
+/** Correo al que se enruta la universidad que no aparece en la lista. */
+export const CONTACTO = 'first.contact.desk@aideatext.ai';
+
+/**
+ * Lo que se le dice a quien no coincide. Nunca «no se puede»: la lista es
+ * nuestra, no suya, y cada correo que llega por aquí le dice al dueño del
+ * producto qué institución añadir.
+ */
+export const MENSAJE_NO_ESTA_EN_LA_LISTA =
+  `¿Tu universidad no aparece? Escríbenos a ${CONTACTO} y la agregamos.`;
+
+/**
+ * Extrae el dominio normalizado de un correo, o `null` si no lo parece.
+ *
+ * Se exporta para poder probar el reconocimiento aparte de la decisión de
+ * precio.
+ */
+export function dominioDe(correo: string): string | null {
+  const limpio = correo.trim().toLowerCase();
+  const partes = limpio.split('@');
+  // Exactamente una arroba: «a@b@unam.mx» no es un correo.
+  if (partes.length !== 2) return null;
+  const [usuario, resto] = partes;
+  if (usuario === '') return null;
+  // Un punto final es legal en un FQDN («unam.mx.») y designa el mismo
+  // dominio; se quita para que no impida la coincidencia.
+  const dominio = resto.replace(/\.+$/, '');
+  if (!dominio.includes('.')) return null;
+  // Sin espacios ni caracteres raros: si no parece un dominio, no lo es.
+  if (!/^[a-z0-9.-]+$/.test(dominio)) return null;
+  if (/\.\./.test(dominio)) return null;
+  return dominio;
+}
+
+/**
+ * `true` si el dominio del correo cae bajo alguno de los sufijos
+ * institucionales, comparando en frontera de punto.
+ *
+ * Un `false` NO significa «no se puede»: significa «no está en la lista»,
+ * y eso se resuelve escribiendo un correo.
+ */
+export function esInstitucional(correo: string): boolean {
+  const dominio = dominioDe(correo);
+  if (dominio === null) return false;
+  return SUFIJOS_INSTITUCIONALES.some(
+    (sufijo) => dominio === sufijo || dominio.endsWith('.' + sufijo)
+  );
+}
+
+// ── Precios ──────────────────────────────────────────────────────────
+// Modelo cerrado con el dueño del producto. Viven aquí, como constantes
+// con nombre, para que la página y las pruebas lean la misma cifra.
+
+/** Horas de audio incluidas en cualquiera de las dos tarifas. */
+export const HORAS_INCLUIDAS = 4;
+/** Estudiantes y organizaciones sin fines de lucro. 50 MXN por hora. */
+export const PRECIO_INSTITUCIONAL_MXN = 200;
+/** Empresas y profesionales. 125 MXN por hora. */
+export const PRECIO_GENERAL_MXN = 500;
+
+export interface Tarifa {
+  /** Si aplica el precio reducido. */
+  institucional: boolean;
+  /** Precio en pesos mexicanos por hasta `HORAS_INCLUIDAS` horas. */
+  mxn: number;
+  /** Frase lista para mostrar. */
+  mensaje: string;
+}
+
+/**
+ * Qué tarifa le toca a un correo, con el texto que se le muestra.
+ *
+ * Es una función pura y sin DOM: devuelve texto plano, y quien la usa lo
+ * inserta con `textContent`, no con `innerHTML`. Lo que escribe el
+ * usuario nunca vuelve a la página como HTML.
+ */
+export function tarifaPara(correo: string): Tarifa {
+  if (esInstitucional(correo)) {
+    return {
+      institucional: true,
+      mxn: PRECIO_INSTITUCIONAL_MXN,
+      mensaje:
+        `Tarifa institucional: ${PRECIO_INSTITUCIONAL_MXN} MXN por hasta ` +
+        `${HORAS_INCLUIDAS} horas de audio. Validamos el correo al ` +
+        `responderte.`,
+    };
+  }
+  return {
+    institucional: false,
+    mxn: PRECIO_GENERAL_MXN,
+    mensaje:
+      `Con este correo aplica la tarifa general: ${PRECIO_GENERAL_MXN} MXN ` +
+      `por hasta ${HORAS_INCLUIDAS} horas. ${MENSAJE_NO_ESTA_EN_LA_LISTA}`,
+  };
+}
