@@ -257,6 +257,42 @@ export function configureWorker(url: string): void {
   pdfjsLib.GlobalWorkerOptions.workerSrc = url;
 }
 
+/**
+ * Opcodes de PDF.js que pintan contenido rasterizado.
+ *
+ * El conjunto se deriva **por nombre**, no enumerando constantes a mano, por
+ * dos razones aprendidas a golpes:
+ *
+ * 1. Una constante inexistente rompe `tsc --noEmit` y por tanto `npm run
+ *    build`. Ocurrió con `paintJpegXObject`, que no existe en pdfjs-dist 4.x.
+ *    Derivar por nombre no puede fallar así.
+ * 2. Enumerar a mano deja huecos. La lista escrita a ojo omitía
+ *    `paintImageMaskXObject`, y **los escáneres de documentos producen
+ *    imágenes bitonales que PDF codifica justamente como máscaras**: una tesis
+ *    escaneada real se habría clasificado como `vacia` en vez de `escaneado`,
+ *    diciéndole al usuario que su documento está vacío en lugar de ofrecerle
+ *    el OCR.
+ *
+ * En pdfjs-dist 4.10.38 esto resuelve a 8 opcodes (83–90).
+ */
+const OPS_DE_IMAGEN: ReadonlySet<number> = new Set(
+  Object.entries(pdfjsLib.OPS)
+    .filter(([nombre]) => /^paint.*Image/.test(nombre))
+    .map(([, codigo]) => codigo as number)
+);
+
+/**
+ * ¿La lista de operadores de una página pinta algún contenido rasterizado?
+ *
+ * Se prefiere el falso positivo al falso negativo: solo se consulta cuando la
+ * página ya tiene poco texto, así que clasificar de más como «escaneada»
+ * ofrece OCR innecesariamente —inocuo—, mientras que clasificar de menos le
+ * dice al usuario que su escaneo está vacío —caro y confuso—.
+ */
+export function tieneOperadorDeImagen(fnArray: readonly number[]): boolean {
+  return fnArray.some((fn) => OPS_DE_IMAGEN.has(fn));
+}
+
 /** Opciones comunes de carga. */
 export function loadOptions(data: ArrayBuffer) {
   return {
@@ -285,7 +321,7 @@ Crear `web/src/pdf/fixtures.test.ts`:
 ```ts
 import { describe, it, expect } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
-import { pdfjs, loadOptions } from './pdfjs';
+import { pdfjs, loadOptions, tieneOperadorDeImagen } from './pdfjs';
 import { makeTextPdf, makeImagePdf } from './fixtures';
 
 /** Texto de prueba que supera holgadamente el umbral de 100 caracteres. */
@@ -300,12 +336,7 @@ async function inspeccionar(data: ArrayBuffer, pagina = 1) {
     .join('')
     .trim().length;
   const ops = await page.getOperatorList();
-  const tieneImagen = ops.fnArray.some(
-    (fn: number) =>
-      fn === pdfjs.OPS.paintImageXObject ||
-      fn === pdfjs.OPS.paintInlineImageXObject ||
-      fn === pdfjs.OPS.paintJpegXObject
-  );
+  const tieneImagen = tieneOperadorDeImagen(ops.fnArray);
   await doc.destroy();
   return { charCount, tieneImagen };
 }
@@ -568,7 +599,7 @@ Expected: FAIL — `Failed to resolve import "./diagnose"`.
 - [ ] **Step 3: Implementar `web/src/pdf/diagnose.ts`**
 
 ```ts
-import { pdfjs, loadOptions } from './pdfjs';
+import { pdfjs, loadOptions, tieneOperadorDeImagen } from './pdfjs';
 
 /** Umbral de caracteres a partir del cual una página se considera texto real. */
 const UMBRAL_TEXTO = 100;
@@ -613,17 +644,13 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
     if (charCount >= UMBRAL_TEXTO) {
       kind = 'texto';
     } else {
-      // Solo operaciones de imagen auténticas. Deliberadamente NO se incluye
+      // Solo operaciones de imagen auténticas. Deliberadamente NO cuenta
       // `OPS.fill`: un relleno es una forma dibujada, no un escaneo, y
       // aceptarlo clasificaría como escaneada cualquier página con un borde.
+      // El conjunto de opcodes vive en `pdfjs.ts` y se deriva por nombre;
+      // ver allí por qué no se enumeran a mano.
       const ops = await page.getOperatorList();
-      const hasImage = ops.fnArray.some(
-        (fn: number) =>
-          fn === pdfjs.OPS.paintImageXObject ||
-          fn === pdfjs.OPS.paintInlineImageXObject ||
-          fn === pdfjs.OPS.paintJpegXObject
-      );
-      kind = hasImage ? 'escaneado' : 'vacia';
+      kind = tieneOperadorDeImagen(ops.fnArray) ? 'escaneado' : 'vacia';
     }
 
     pages.push({ pageNumber: n, kind, charCount });
@@ -740,7 +767,7 @@ Expected: FAIL — `Failed to resolve import "./toMarkdown"`.
 - [ ] **Step 3: Implementar `web/src/pdf/toMarkdown.ts`**
 
 ```ts
-import { pdfjs, loadOptions } from './pdfjs';
+import { pdfjs, loadOptions, tieneOperadorDeImagen } from './pdfjs';
 import { diagnosePdf } from './diagnose';
 import { sha256Hex } from '../lib/hash';
 
