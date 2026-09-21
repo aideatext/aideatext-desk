@@ -211,26 +211,104 @@ coincidir."
 ### Task 2: Generador de fixtures de PDF
 
 **Files:**
+- Create: `web/src/pdf/pdfjs.ts` *(punto de entrada único a PDF.js — ver nota)*
 - Create: `web/src/pdf/fixtures.ts`
 - Test: `web/src/pdf/fixtures.test.ts`
+
+> **Por qué `pdfjs.ts` nace aquí.** PDF.js se debe importar desde **una sola** ruta en
+> todo el proyecto. Si un módulo importara `pdfjs-dist/legacy/...` y otro
+> `pdfjs-dist`, Vite cargaría **dos instancias distintas**, y el
+> `GlobalWorkerOptions.workerSrc` configurado en una no aplicaría a la otra: el
+> diagnóstico fallaría en el navegador sin fallar en las pruebas. Las pruebas de
+> esta tarea ya necesitan PDF.js para verificar el contrato semántico de los
+> fixtures, así que el módulo nace aquí y las Tasks 3, 4 y 5 lo consumen.
 
 **Interfaces:**
 - Consumes: nada
 - Produces:
-  - `makeTextPdf(pages: string[]): Promise<ArrayBuffer>` — PDF con capa de texto real, una página por elemento del arreglo.
-  - `makeImagePdf(pageCount: number): Promise<ArrayBuffer>` — PDF cuyas páginas contienen únicamente un rectángulo dibujado, sin texto extraíble. Simula un escaneo.
+  - `makeTextPdf(pages: string[]): Promise<ArrayBuffer>` — PDF con capa de texto real, una página por elemento del arreglo. El texto se reparte en varias líneas (ver la nota en el código: una línea única se recorta al ancho de página y arruina el margen del umbral).
+  - `makeImagePdf(pageCount: number): Promise<ArrayBuffer>` — PDF cuyas páginas contienen **una imagen PNG real incrustada** (`embedPng` + `drawImage`), sin texto extraíble. Simula un escaneo. **No es un rectángulo dibujado:** tiene que emitir un operador `paintImageXObject` auténtico, que es lo que detecta la Task 3.
   - Las consumen las Tasks 3 y 4.
+  - Desde `pdfjs.ts`: `pdfjs` (reexport), `configureWorker(url: string): void` y
+    `loadOptions(data: ArrayBuffer)`. Los consumen las Tasks 3, 4 y 5.
 
 **Por qué existe esta tarea:** el diagnóstico de PDF no se puede probar sin PDFs de entrada deterministas. Generarlos en código evita comprometer archivos binarios al repositorio y hace las pruebas reproducibles.
 
-- [ ] **Step 1: Escribir la prueba que falla**
+- [ ] **Step 1: Crear el punto de entrada único `web/src/pdf/pdfjs.ts`**
+
+```ts
+/**
+ * Punto de entrada UNICO a PDF.js para todo el proyecto.
+ *
+ * Nadie más importa 'pdfjs-dist' directamente. Si dos módulos lo importaran
+ * por rutas distintas, el bundler cargaría dos instancias separadas y la
+ * configuración del worker aplicada a una no afectaría a la otra —
+ * un fallo que no aparece en las pruebas y sí en el navegador.
+ *
+ * Se usa la variante `legacy` porque es la que funciona tanto en el
+ * entorno Node de Vitest como en el navegador.
+ */
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+export const pdfjs = pdfjsLib;
+
+/** Configura el worker. Solo se invoca desde el navegador (`main.ts`). */
+export function configureWorker(url: string): void {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = url;
+}
+
+/** Opciones comunes de carga. */
+export function loadOptions(data: ArrayBuffer) {
+  return {
+    data: new Uint8Array(data),
+    // Sin red: evita descargar fuentes y mapas de caracteres remotos, lo
+    // que contradiría la garantía de que nada sale del navegador.
+    disableFontFace: true,
+    isEvalSupported: false,
+    // Silencia "Ensure that the `standardFontDataUrl` API parameter is
+    // provided". Solo extraemos texto, nunca renderizamos glifos, así que
+    // los datos de fuente no hacen falta. Verificado: con y sin esta
+    // opcion se extraen exactamente los mismos caracteres.
+    //
+    // ⚠️ NO apuntar `standardFontDataUrl` a un CDN para callar el aviso:
+    // seria precisamente la peticion de red que el producto promete que
+    // no ocurre.
+    verbosity: pdfjsLib.VerbosityLevel.ERRORS,
+  };
+}
+```
+
+- [ ] **Step 2: Escribir las pruebas que fallan**
 
 Crear `web/src/pdf/fixtures.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
+import { pdfjs, loadOptions } from './pdfjs';
 import { makeTextPdf, makeImagePdf } from './fixtures';
+
+/** Texto de prueba que supera holgadamente el umbral de 100 caracteres. */
+const LARGO = 'palabra '.repeat(30);
+
+/** Lo que PDF.js observa en una página: es la lente que usará la Task 3. */
+async function inspeccionar(data: ArrayBuffer, pagina = 1) {
+  const doc = await pdfjs.getDocument(loadOptions(data)).promise;
+  const page = await doc.getPage(pagina);
+  const charCount = (await page.getTextContent()).items
+    .map((i) => ('str' in i ? i.str : ''))
+    .join('')
+    .trim().length;
+  const ops = await page.getOperatorList();
+  const tieneImagen = ops.fnArray.some(
+    (fn: number) =>
+      fn === pdfjs.OPS.paintImageXObject ||
+      fn === pdfjs.OPS.paintInlineImageXObject ||
+      fn === pdfjs.OPS.paintJpegXObject
+  );
+  await doc.destroy();
+  return { charCount, tieneImagen };
+}
 
 describe('fixtures de PDF', () => {
   it('makeTextPdf produce un PDF válido con la cabecera %PDF', async () => {
@@ -252,35 +330,102 @@ describe('fixtures de PDF', () => {
     const doc = await PDFDocument.load(buf);
     expect(doc.getPageCount()).toBe(2);
   });
+
+  // --- Contrato semántico: es lo que consumen las Tasks 3 y 4 ---
+  //
+  // Sin estas dos pruebas, cambiar `embedPng` por `drawRectangle` o borrar
+  // el `drawText` dejaria las tres pruebas de arriba en verde y destruiria
+  // en silencio la distincion sobre la que se construye el diagnostico.
+
+  it('una página de makeTextPdf tiene texto extraíble y ninguna imagen', async () => {
+    const { charCount, tieneImagen } = await inspeccionar(await makeTextPdf([LARGO]));
+    // Holgado por encima del umbral de 100 de diagnose.ts. Con el texto en
+    // una sola linea se extraerian ~101 y el margen seria de 1 caracter.
+    expect(charCount).toBeGreaterThan(200);
+    expect(tieneImagen).toBe(false);
+  });
+
+  it('una página de makeImagePdf tiene imagen y ningún texto extraíble', async () => {
+    const { charCount, tieneImagen } = await inspeccionar(await makeImagePdf(2));
+    expect(charCount).toBe(0);
+    expect(tieneImagen).toBe(true);
+  });
 });
 ```
 
-- [ ] **Step 2: Ejecutar y verificar que falla**
+- [ ] **Step 3: Ejecutar y verificar que falla**
 
 Run: `cd web && npm test -- fixtures`
 Expected: FAIL — `Failed to resolve import "./fixtures"`.
 
-- [ ] **Step 3: Implementar `web/src/pdf/fixtures.ts`**
+- [ ] **Step 4: Implementar `web/src/pdf/fixtures.ts`**
 
 ```ts
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 /**
+ * Extrae un `ArrayBuffer` propio a partir de la vista que devuelve pdf-lib.
+ *
+ * El `slice` respeta `byteOffset`/`byteLength` en vez de devolver el búfer
+ * subyacente completo, que es el error clásico aquí. El `as ArrayBuffer` es
+ * necesario porque la librería moderna de TypeScript tipa `.buffer` como
+ * `ArrayBufferLike`; es correcto porque pdf-lib siempre asigna un
+ * `ArrayBuffer` común, nunca un `SharedArrayBuffer`.
+ */
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength
+  ) as ArrayBuffer;
+}
+
+/** Caracteres por línea. A 12pt Helvetica caben holgados en A4 con margen de 50pt. */
+const MAX_CARACTERES_POR_LINEA = 60;
+
+/** Reparte un texto en líneas que quepan en el ancho de la página. */
+function repartirEnLineas(texto: string): string[] {
+  const lineas: string[] = [];
+  let actual = '';
+  for (const palabra of texto.split(' ')) {
+    if (!palabra) continue;
+    const candidata = actual ? `${actual} ${palabra}` : palabra;
+    if (candidata.length > MAX_CARACTERES_POR_LINEA) {
+      if (actual) lineas.push(actual);
+      actual = palabra;
+    } else {
+      actual = candidata;
+    }
+  }
+  if (actual) lineas.push(actual);
+  return lineas;
+}
+
+/**
  * PDF con capa de texto real: una página por cada cadena recibida.
  * Representa el caso "PDF nativo", que se convierte sin OCR.
+ *
+ * ⚠️ El texto se reparte en varias líneas, y eso NO es cosmético.
+ * Una sola llamada a `drawText` con un texto largo escribe una única línea
+ * que se sale de la página, y PDF.js entonces extrae solo lo que cabe:
+ * **exactamente ~101 caracteres, sin importar cuánto se haya escrito**
+ * (medido: 30 repeticiones y 200 repeticiones extraen los mismos 101).
+ * Frente al umbral de 100 caracteres de `diagnose.ts` eso dejaba un margen
+ * de UN carácter, y ningún `repeat()` podía ampliarlo. Cualquier cambio de
+ * versión de PDF.js o de métricas de fuente habría volteado la prueba a
+ * rojo sin explicación aparente.
+ * Con reparto en líneas la extracción escala: 239 caracteres para el mismo
+ * texto, margen de 139.
  */
 export async function makeTextPdf(pages: string[]): Promise<ArrayBuffer> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   for (const text of pages) {
     const page = doc.addPage([595, 842]); // A4 en puntos
-    page.drawText(text, { x: 50, y: 780, size: 12, font });
+    repartirEnLineas(text).forEach((linea, i) => {
+      page.drawText(linea, { x: 50, y: 780 - i * 16, size: 12, font });
+    });
   }
-  const bytes = await doc.save();
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength
-  ) as ArrayBuffer;
+  return toArrayBuffer(await doc.save());
 }
 
 /**
@@ -308,27 +453,39 @@ export async function makeImagePdf(pageCount: number): Promise<ArrayBuffer> {
     const page = doc.addPage([595, 842]);
     page.drawImage(png, { x: 40, y: 40, width: 515, height: 762 });
   }
-  const bytes = await doc.save();
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength
-  ) as ArrayBuffer;
+  return toArrayBuffer(await doc.save());
 }
 ```
 
-- [ ] **Step 4: Ejecutar y verificar que pasa**
+- [ ] **Step 5: Ejecutar y verificar que pasa**
 
 Run: `cd web && npm test -- fixtures`
-Expected: PASS — 3 pruebas.
+Expected: PASS — 5 pruebas.
 
-- [ ] **Step 5: Commit**
+Si falla al resolver `pdfjs-dist/legacy/build/pdf.mjs`, verificar la ruta real con
+`ls web/node_modules/pdfjs-dist/legacy/build/` y ajustar el import **únicamente en
+`pdfjs.ts`** — ese es el motivo de que ese módulo exista.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add web/src/pdf/fixtures.ts web/src/pdf/fixtures.test.ts
-git commit -m "test(web): generador de fixtures de PDF para las pruebas de diagnostico
+git add web/src/pdf/pdfjs.ts web/src/pdf/fixtures.ts web/src/pdf/fixtures.test.ts
+git commit -m "test(web): fixtures de PDF con su contrato semantico verificado
 
 Genera los PDFs de prueba en codigo en vez de comprometer binarios al
-repositorio: reproducible y sin archivos opacos versionados."
+repositorio: reproducible y sin archivos opacos versionados.
+
+Las dos ultimas pruebas protegen el contrato del que dependen las Tasks
+3 y 4: una pagina de texto tiene texto extraible y ninguna imagen; una
+pagina escaneada tiene imagen y cero texto. Sin ellas, cambiar embedPng
+por drawRectangle o borrar el drawText dejaria la suite en verde y
+destruiria en silencio la distincion sobre la que se construye el
+diagnostico.
+
+El texto se reparte en varias lineas porque una sola llamada a drawText
+se recorta al ancho de pagina: PDF.js extrae ~101 caracteres sin
+importar cuanto se escriba, lo que dejaba un margen de 1 caracter
+contra el umbral de 100."
 ```
 
 ---
@@ -336,23 +493,13 @@ repositorio: reproducible y sin archivos opacos versionados."
 ### Task 3: Diagnóstico de PDF
 
 **Files:**
-- Create: `web/src/pdf/pdfjs.ts` *(módulo compartido — ver nota)*
 - Create: `web/src/pdf/diagnose.ts`
 - Test: `web/src/pdf/diagnose.test.ts`
 
-> **Por qué existe `pdfjs.ts`:** PDF.js se debe importar desde **una sola**
-> ruta en todo el proyecto. Si `diagnose.ts` importa `pdfjs-dist/legacy/...`
-> y `main.ts` importa `pdfjs-dist`, Vite carga **dos instancias distintas
-> del módulo**, y el `GlobalWorkerOptions.workerSrc` que configura una no
-> aplica a la otra: el diagnóstico fallaría en el navegador con un error de
-> worker, sin fallar en las pruebas. Centralizarlo elimina toda la clase de
-> error, y si la ruta hay que ajustarla para el entorno de Vitest, se
-> ajusta en un único lugar.
-
 **Interfaces:**
-- Consumes: `makeTextPdf`, `makeImagePdf` de la Task 2.
-- Produces también: `pdfjs` (reexport) y `configureWorker(url: string): void`
-  desde `web/src/pdf/pdfjs.ts`. Los consumen las Tasks 4 y 5.
+- Consumes: `makeTextPdf`, `makeImagePdf` y `pdfjs`/`loadOptions` de la Task 2.
+  **`pdfjs.ts` ya existe — no volver a crearlo, y no importar `pdfjs-dist`
+  directamente desde ningún otro archivo.**
 - Produces:
   ```ts
   type PageKind = 'texto' | 'escaneado' | 'vacia';
@@ -418,42 +565,7 @@ describe('diagnosePdf', () => {
 Run: `cd web && npm test -- diagnose`
 Expected: FAIL — `Failed to resolve import "./diagnose"`.
 
-- [ ] **Step 3: Crear el módulo compartido `web/src/pdf/pdfjs.ts`**
-
-```ts
-/**
- * Punto de entrada UNICO a PDF.js para todo el proyecto.
- *
- * Nadie más importa 'pdfjs-dist' directamente. Si dos módulos lo importaran
- * por rutas distintas, el bundler cargaría dos instancias separadas y la
- * configuración del worker aplicada a una no afectaría a la otra —
- * un fallo que no aparece en las pruebas y sí en el navegador.
- *
- * Se usa la variante `legacy` porque es la que funciona tanto en el
- * entorno Node de Vitest como en el navegador.
- */
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-
-export const pdfjs = pdfjsLib;
-
-/** Configura el worker. Solo se invoca desde el navegador (`main.ts`). */
-export function configureWorker(url: string): void {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = url;
-}
-
-/** Opciones comunes de carga: sin recursos remotos, sin eval. */
-export function loadOptions(data: ArrayBuffer) {
-  return {
-    data: new Uint8Array(data),
-    // Sin red: evita descargar fuentes y mapas de caracteres remotos, lo
-    // que contradiría la garantía de que nada sale del navegador.
-    disableFontFace: true,
-    isEvalSupported: false,
-  };
-}
-```
-
-- [ ] **Step 4: Implementar `web/src/pdf/diagnose.ts`**
+- [ ] **Step 3: Implementar `web/src/pdf/diagnose.ts`**
 
 ```ts
 import { pdfjs, loadOptions } from './pdfjs';
@@ -532,7 +644,7 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
 }
 ```
 
-- [ ] **Step 5: Ejecutar y verificar que pasa**
+- [ ] **Step 4: Ejecutar y verificar que pasa**
 
 Run: `cd web && npm test -- diagnose`
 Expected: PASS — 5 pruebas.
@@ -541,10 +653,10 @@ Si falla al resolver `pdfjs-dist/legacy/build/pdf.mjs`, verificar la ruta real c
 `ls web/node_modules/pdfjs-dist/legacy/build/` y ajustar el import **únicamente en
 `pdfjs.ts`** — ese es el motivo de que ese módulo exista.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add web/src/pdf/pdfjs.ts web/src/pdf/diagnose.ts web/src/pdf/diagnose.test.ts
+git add web/src/pdf/diagnose.ts web/src/pdf/diagnose.test.ts
 git commit -m "feat(web): diagnostico de PDF en el navegador
 
 Clasifica cada pagina como texto, escaneado o vacia usando un umbral de
