@@ -29,11 +29,13 @@ Ver [SECURITY.md](SECURITY.md) para el detalle del tratamiento de datos.
 
 ## Estado
 
-✅ **Web cliente en producción** — https://desk.aideatext.ai
+✅ **Web cliente desplegada** — https://desk.aideatext.ai
    Diagnóstico de PDF y conversión a Markdown, enteramente en el navegador.
+   Ninguna petición de subida: lo impone una CSP con `connect-src 'self'`,
+   no solo el código.
 
-🚧 **Transcripción de audio** — en desarrollo. Ver
-   [el plan](docs/superpowers/plans/2026-09-20-desk-transcripcion.md).
+🚧 **Transcripción de audio** — pendiente. Es el Plan 2; todavía no hay
+   documento de plan.
 
 ## Arquitectura
 

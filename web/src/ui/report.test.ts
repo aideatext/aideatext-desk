@@ -83,6 +83,32 @@ describe('renderDiagnosis', () => {
     expect(html).not.toContain('3 con texto');
   });
 
+  // Tercera rama que admite blancos, y la ultima que seguia usando
+  // `pageCount`. `resumirPaginas` decide por PRESENCIA, asi que una tesis de
+  // 199 paginas escaneadas con una portada vectorial en blanco cae aqui con
+  // pageCount 200, y el informe anunciaba «200 paginas escaneadas» para 199
+  // reales. Duele mas que en las otras ramas: ese numero es justo el que el
+  // usuario mira para decidir si paga el OCR, que se cobra por pagina.
+  //
+  // La prueba falla con la expresion anterior (`${d.pageCount}`): esperaba
+  // 199, obtenia 200, y no habia ningun «en blanco» que encontrar.
+  it('no cuenta las paginas en blanco como escaneadas', () => {
+    const html = renderDiagnosis(
+      base({
+        overall: 'escaneado',
+        convertibleInBrowser: false,
+        pageCount: 200,
+        pages: paginas([
+          ['escaneado', 199],
+          ['vacia', 1],
+        ]),
+      })
+    );
+    expect(html).toContain('199');
+    expect(html).toContain('1 en blanco');
+    expect(html).not.toContain('200');
+  });
+
   it('nunca dice "no se puede" ante un PDF escaneado', () => {
     const html = renderDiagnosis(
       base({ overall: 'escaneado', convertibleInBrowser: false })

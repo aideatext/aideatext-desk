@@ -41,8 +41,17 @@ export function renderDiagnosis(d: PdfDiagnosis): string {
   }
 
   if (d.overall === 'escaneado') {
+    // Se cuentan las ESCANEADAS, no `pageCount`. `resumirPaginas` devuelve
+    // 'escaneado' por PRESENCIA, y admite blancos en ese veredicto igual que
+    // en 'texto' y en 'mixto': una tesis de 199 paginas escaneadas con una
+    // portada vectorial cae aqui con pageCount 200. Decir «200 paginas
+    // escaneadas» inflaba el recuento, y encima es el numero sobre el que el
+    // usuario decide si paga el OCR. Cuarta aparicion de los blancos
+    // contados como otra cosa; por eso hay una prueba que lo fija.
     return `
-      <p><strong>${d.pageCount}</strong> páginas escaneadas, sin capa de texto.</p>
+      <p><strong>${escaneadas}</strong> páginas escaneadas, sin capa de texto${
+        enBlanco > 0 ? `, y ${enBlanco} en blanco` : ''
+      }.</p>
       <p>Este documento necesita OCR, que se procesa en servidor.
          Puedes probar <strong>una página gratis</strong> antes de decidir:
          elige la peor escaneada, para ver la calidad en el caso más difícil.</p>
