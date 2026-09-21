@@ -29,10 +29,11 @@ Ver [SECURITY.md](SECURITY.md) para el detalle del tratamiento de datos.
 
 ## Estado
 
-🚧 **En diseño.** El spec vive en
-[`docs/superpowers/specs/`](docs/superpowers/specs/2026-09-20-desk-v01-design.md).
+✅ **Web cliente en producción** — https://desk.aideatext.ai
+   Diagnóstico de PDF y conversión a Markdown, enteramente en el navegador.
 
-No hay código de producto todavía.
+🚧 **Transcripción de audio** — en desarrollo. Ver
+   [el plan](docs/superpowers/plans/2026-09-20-desk-transcripcion.md).
 
 ## Arquitectura
 
