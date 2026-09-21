@@ -33,6 +33,21 @@ describe('pdfToMarkdown', () => {
     expect(r.pagesBlank).toEqual([]);
   });
 
+  it('una pagina en blanco va a pagesBlank, no a pagesScanned', async () => {
+    // La segunda pagina tiene 2 caracteres: por debajo del umbral y sin
+    // imagen, asi que `diagnosePdf` la clasifica `vacia`.
+    //
+    // Esta prueba existe porque las demas solo afirman `pagesBlank: []`, y
+    // una asercion de arreglo vacio sigue verde aunque la rama este muerta
+    // o empuje al arreglo equivocado. Es la misma forma de prueba que no
+    // puede fallar que ocultaba el bug del hash sobre buffer detached.
+    // Invierte la condicion en toMarkdown.ts y esta prueba debe ponerse roja.
+    const r = await pdfToMarkdown(await makeTextPdf([LARGO, 'hi']));
+    expect(r.pagesConverted).toBe(1);
+    expect(r.pagesScanned).toEqual([]);
+    expect(r.pagesBlank).toEqual([2]);
+  });
+
   it('el sourceHash coincide con el sha256 del archivo de entrada', async () => {
     const pdf = await makeTextPdf([LARGO]);
     const r = await pdfToMarkdown(pdf);
