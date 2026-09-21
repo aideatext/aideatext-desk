@@ -789,7 +789,8 @@ incluso en escaneos con OCR parcial. No hace ninguna peticion de red."
     markdown: string;
     sourceHash: string;
     pagesConverted: number;
-    pagesSkipped: number[];
+    pagesScanned: number[];
+    pagesBlank: number[];
   }
   pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult>
   ```
@@ -824,13 +825,17 @@ describe('pdfToMarkdown', () => {
   it('informa cuantas paginas convirtio', async () => {
     const r = await pdfToMarkdown(await makeTextPdf([LARGO, LARGO, LARGO]));
     expect(r.pagesConverted).toBe(3);
-    expect(r.pagesSkipped).toEqual([]);
+    expect(r.pagesScanned).toEqual([]);
+    expect(r.pagesBlank).toEqual([]);
   });
 
-  it('omite las paginas escaneadas y las reporta', async () => {
+  it('omite las paginas escaneadas y las reporta como facturables', async () => {
     const r = await pdfToMarkdown(await makeImagePdf(2));
     expect(r.pagesConverted).toBe(0);
-    expect(r.pagesSkipped).toEqual([1, 2]);
+    expect(r.pagesScanned).toEqual([1, 2]);
+    // Escaneadas, no en blanco: son cosas distintas y solo las primeras
+    // requieren OCR de pago.
+    expect(r.pagesBlank).toEqual([]);
   });
 
   it('el sourceHash coincide con el sha256 del archivo de entrada', async () => {
@@ -849,7 +854,9 @@ Expected: FAIL — `Failed to resolve import "./toMarkdown"`.
 - [ ] **Step 3: Implementar `web/src/pdf/toMarkdown.ts`**
 
 ```ts
-import { pdfjs, loadOptions, tieneOperadorDeImagen } from './pdfjs';
+// `tieneOperadorDeImagen` NO se importa aqui: `diagnosePdf` ya clasifico
+// las paginas. Importarlo sin usarlo es error TS6133 con noUnusedLocals.
+import { pdfjs, loadOptions } from './pdfjs';
 import { diagnosePdf } from './diagnose';
 import { sha256Hex } from '../lib/hash';
 
@@ -858,8 +865,21 @@ export interface ConversionResult {
   /** SHA-256 del PDF de origen. El archivo no sale del navegador. */
   sourceHash: string;
   pagesConverted: number;
-  /** Números de página omitidas por no tener texto extraíble. */
-  pagesSkipped: number[];
+  /**
+   * Páginas escaneadas: tienen contenido, pero requiere OCR en servidor.
+   * Son las facturables, y las unicas que deben mostrarse como pendientes.
+   */
+  pagesScanned: number[];
+  /**
+   * Páginas sin texto y sin imagen. No hay nada que convertir ni que cobrar.
+   *
+   * Se separan de `pagesScanned` a proposito. Un unico campo `pagesSkipped`
+   * mezclaba ambas, perdiendo una distincion que `diagnosePdf` ya habia
+   * calculado -- e invitando a cobrar OCR por los separadores de capitulo y
+   * versos en blanco que abundan en una tesis. Es el mismo descuido que
+   * corrompia el veredicto del documento antes de `resumirPaginas`.
+   */
+  pagesBlank: number[];
 }
 
 /**
@@ -874,7 +894,8 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   const doc = await pdfjs.getDocument(loadOptions(data)).promise;
 
   const bloques: string[] = [];
-  const pagesSkipped: number[] = [];
+  const pagesScanned: number[] = [];
+  const pagesBlank: number[] = [];
 
   // `finally` por el mismo motivo que en `diagnose.ts`: si PDF.js rechaza a
   // mitad del recorrido, el documento quedaría sin destruir, reteniendo el
@@ -882,7 +903,8 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   try {
     for (const reporte of diagnosis.pages) {
       if (reporte.kind !== 'texto') {
-        pagesSkipped.push(reporte.pageNumber);
+        if (reporte.kind === 'escaneado') pagesScanned.push(reporte.pageNumber);
+        else pagesBlank.push(reporte.pageNumber);
         continue;
       }
       const page = await doc.getPage(reporte.pageNumber);
@@ -902,7 +924,8 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
     markdown: bloques.join('\n\n'),
     sourceHash,
     pagesConverted: bloques.length,
-    pagesSkipped,
+    pagesScanned,
+    pagesBlank,
   };
 }
 ```
@@ -923,8 +946,10 @@ Expected: PASS — 27 pruebas en total (4 hash + 5 fixtures + 13 diagnose + 5 to
 git add web/src/pdf/toMarkdown.ts web/src/pdf/toMarkdown.test.ts
 git commit -m "feat(web): conversion de PDF a Markdown en el navegador
 
-Omite las paginas sin capa de texto y las reporta en pagesSkipped: esas
-requieren OCR en servidor, que es el servicio de pago. Calcula el
+Omite las paginas sin capa de texto, separando las escaneadas (requieren
+OCR de pago) de las que estan en blanco (no hay nada que hacer ni que
+cobrar). Un unico campo pagesSkipped mezclaba ambas y perdia una
+distincion que diagnosePdf ya habia calculado. Calcula el
 sha256 del origen aunque el archivo nunca salga del navegador, para que
 el usuario pueda identificar inequivocamente que convirtio."
 ```
