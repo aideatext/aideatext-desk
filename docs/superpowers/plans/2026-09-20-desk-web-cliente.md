@@ -86,7 +86,9 @@
 - [ ] **Step 3: Crear `web/vite.config.ts`**
 
 ```ts
-import { defineConfig } from 'vite';
+// El import viene de 'vitest/config', NO de 'vite': la clave `test` no
+// existe en el tipo de configuración de Vite y el compilador la rechaza.
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   build: {
@@ -207,6 +209,7 @@ Crear `web/src/pdf/fixtures.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
+import { PDFDocument } from 'pdf-lib';
 import { makeTextPdf, makeImagePdf } from './fixtures';
 
 describe('fixtures de PDF', () => {
@@ -216,13 +219,18 @@ describe('fixtures de PDF', () => {
   });
 
   it('makeTextPdf crea una página por cada elemento', async () => {
-    const buf = await makeTextPdf(['uno', 'dos', 'tres']);
-    expect(buf.byteLength).toBeGreaterThan(0);
+    // Se relee el PDF con pdf-lib para contar paginas de verdad.
+    // Afirmar solo `byteLength > 0` no comprobaria nada de lo que
+    // enuncia el nombre de la prueba.
+    const doc = await PDFDocument.load(await makeTextPdf(['uno', 'dos', 'tres']));
+    expect(doc.getPageCount()).toBe(3);
   });
 
-  it('makeImagePdf produce un PDF válido', async () => {
-    const bytes = new Uint8Array(await makeImagePdf(2));
-    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
+  it('makeImagePdf produce un PDF válido con el numero de paginas pedido', async () => {
+    const buf = await makeImagePdf(2);
+    expect(new TextDecoder().decode(new Uint8Array(buf).slice(0, 5))).toBe('%PDF-');
+    const doc = await PDFDocument.load(buf);
+    expect(doc.getPageCount()).toBe(2);
   });
 });
 ```
@@ -308,11 +316,23 @@ repositorio: reproducible y sin archivos opacos versionados."
 ### Task 3: Diagnóstico de PDF
 
 **Files:**
+- Create: `web/src/pdf/pdfjs.ts` *(módulo compartido — ver nota)*
 - Create: `web/src/pdf/diagnose.ts`
 - Test: `web/src/pdf/diagnose.test.ts`
 
+> **Por qué existe `pdfjs.ts`:** PDF.js se debe importar desde **una sola**
+> ruta en todo el proyecto. Si `diagnose.ts` importa `pdfjs-dist/legacy/...`
+> y `main.ts` importa `pdfjs-dist`, Vite carga **dos instancias distintas
+> del módulo**, y el `GlobalWorkerOptions.workerSrc` que configura una no
+> aplica a la otra: el diagnóstico fallaría en el navegador con un error de
+> worker, sin fallar en las pruebas. Centralizarlo elimina toda la clase de
+> error, y si la ruta hay que ajustarla para el entorno de Vitest, se
+> ajusta en un único lugar.
+
 **Interfaces:**
 - Consumes: `makeTextPdf`, `makeImagePdf` de la Task 2.
+- Produces también: `pdfjs` (reexport) y `configureWorker(url: string): void`
+  desde `web/src/pdf/pdfjs.ts`. Los consumen las Tasks 4 y 5.
 - Produces:
   ```ts
   type PageKind = 'texto' | 'escaneado' | 'vacia';
@@ -378,10 +398,45 @@ describe('diagnosePdf', () => {
 Run: `cd web && npm test -- diagnose`
 Expected: FAIL — `Failed to resolve import "./diagnose"`.
 
-- [ ] **Step 3: Implementar `web/src/pdf/diagnose.ts`**
+- [ ] **Step 3: Crear el módulo compartido `web/src/pdf/pdfjs.ts`**
 
 ```ts
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+/**
+ * Punto de entrada UNICO a PDF.js para todo el proyecto.
+ *
+ * Nadie más importa 'pdfjs-dist' directamente. Si dos módulos lo importaran
+ * por rutas distintas, el bundler cargaría dos instancias separadas y la
+ * configuración del worker aplicada a una no afectaría a la otra —
+ * un fallo que no aparece en las pruebas y sí en el navegador.
+ *
+ * Se usa la variante `legacy` porque es la que funciona tanto en el
+ * entorno Node de Vitest como en el navegador.
+ */
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+export const pdfjs = pdfjsLib;
+
+/** Configura el worker. Solo se invoca desde el navegador (`main.ts`). */
+export function configureWorker(url: string): void {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = url;
+}
+
+/** Opciones comunes de carga: sin recursos remotos, sin eval. */
+export function loadOptions(data: ArrayBuffer) {
+  return {
+    data: new Uint8Array(data),
+    // Sin red: evita descargar fuentes y mapas de caracteres remotos, lo
+    // que contradiría la garantía de que nada sale del navegador.
+    disableFontFace: true,
+    isEvalSupported: false,
+  };
+}
+```
+
+- [ ] **Step 4: Implementar `web/src/pdf/diagnose.ts`**
+
+```ts
+import { pdfjs, loadOptions } from './pdfjs';
 
 /** Umbral de caracteres a partir del cual una página se considera texto real. */
 const UMBRAL_TEXTO = 100;
@@ -407,16 +462,14 @@ export interface PdfDiagnosis {
  * es el fundamento verificable de la promesa de privacidad (spec §3).
  */
 export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
-  const doc = await pdfjs.getDocument({
-    data: new Uint8Array(data),
-    // Sin red: desactiva la descarga de fuentes y mapas de caracteres remotos.
-    disableFontFace: true,
-    isEvalSupported: false,
-  }).promise;
+  const doc = await pdfjs.getDocument(loadOptions(data)).promise;
 
+  // Se captura ANTES de destruir el documento: `doc.numPages` no es
+  // accesible después de `doc.destroy()`.
+  const pageCount = doc.numPages;
   const pages: PageReport[] = [];
 
-  for (let n = 1; n <= doc.numPages; n++) {
+  for (let n = 1; n <= pageCount; n++) {
     const page = await doc.getPage(n);
     const content = await page.getTextContent();
     const charCount = content.items
@@ -455,28 +508,23 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
   else if (conTexto > 0) overall = 'mixto';
   else overall = 'vacio';
 
-  return {
-    pageCount: doc.numPages,
-    pages,
-    overall,
-    convertibleInBrowser: conTexto > 0,
-  };
+  return { pageCount, pages, overall, convertibleInBrowser: conTexto > 0 };
 }
 ```
 
-- [ ] **Step 4: Ejecutar y verificar que pasa**
+- [ ] **Step 5: Ejecutar y verificar que pasa**
 
 Run: `cd web && npm test -- diagnose`
 Expected: PASS — 5 pruebas.
 
 Si falla al resolver `pdfjs-dist/legacy/build/pdf.mjs`, verificar la ruta real con
-`ls web/node_modules/pdfjs-dist/legacy/build/` y ajustar el import. La variante
-`legacy` es la que funciona en el entorno Node de Vitest.
+`ls web/node_modules/pdfjs-dist/legacy/build/` y ajustar el import **únicamente en
+`pdfjs.ts`** — ese es el motivo de que ese módulo exista.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add web/src/pdf/diagnose.ts web/src/pdf/diagnose.test.ts
+git add web/src/pdf/pdfjs.ts web/src/pdf/diagnose.ts web/src/pdf/diagnose.test.ts
 git commit -m "feat(web): diagnostico de PDF en el navegador
 
 Clasifica cada pagina como texto, escaneado o vacia usando un umbral de
@@ -560,7 +608,7 @@ Expected: FAIL — `Failed to resolve import "./toMarkdown"`.
 - [ ] **Step 3: Implementar `web/src/pdf/toMarkdown.ts`**
 
 ```ts
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { pdfjs, loadOptions } from './pdfjs';
 import { diagnosePdf } from './diagnose';
 import { sha256Hex } from '../lib/hash';
 
@@ -582,11 +630,7 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   const diagnosis = await diagnosePdf(data);
   const sourceHash = await sha256Hex(data);
 
-  const doc = await pdfjs.getDocument({
-    data: new Uint8Array(data),
-    disableFontFace: true,
-    isEvalSupported: false,
-  }).promise;
+  const doc = await pdfjs.getDocument(loadOptions(data)).promise;
 
   const bloques: string[] = [];
   const pagesSkipped: number[] = [];
@@ -650,8 +694,11 @@ el usuario pueda identificar inequivocamente que convirtio."
 - Test: `web/src/ui/report.test.ts`
 
 **Interfaces:**
-- Consumes: `diagnosePdf`, `PdfDiagnosis` (Task 3); `pdfToMarkdown` (Task 4).
+- Consumes: `configureWorker`, `diagnosePdf`, `PdfDiagnosis` (Task 3); `pdfToMarkdown` (Task 4).
 - Produces: `renderDiagnosis(d: PdfDiagnosis): string` — devuelve HTML. Se separa de `main.ts` para poder probarla sin DOM.
+
+⚠️ **`main.ts` nunca importa `pdfjs-dist` directamente.** Accede a PDF.js solo a
+través de `./pdf/pdfjs` (Task 3). Ver la nota de esa tarea.
 
 **Copy obligatorio (spec §2.4):** cuando `convertibleInBrowser` es `false`, la interfaz nunca dice "no se puede". Ofrece el OCR de pago y el correo de contacto.
 
@@ -811,15 +858,20 @@ Expected: PASS — 5 pruebas.
 - [ ] **Step 6: Crear `web/src/main.ts`**
 
 ```ts
-import * as pdfjs from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+import { configureWorker } from './pdf/pdfjs';
 import { diagnosePdf } from './pdf/diagnose';
 import { pdfToMarkdown } from './pdf/toMarkdown';
 import { renderDiagnosis } from './ui/report';
 
 // El worker se sirve desde nuestro propio dominio, no desde un CDN:
 // una peticion externa contradiria la garantia de "nada sale de aqui".
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+//
+// Se configura a traves de ./pdf/pdfjs, que es la unica instancia de
+// PDF.js del proyecto. Importar 'pdfjs-dist' aqui directamente crearia
+// una segunda instancia y esta configuracion no tendria efecto.
+// El worker debe venir de la variante `legacy`, la misma que usa pdfjs.ts.
+configureWorker(workerUrl);
 
 const zona = document.getElementById('zona') as HTMLDivElement;
 const input = document.getElementById('archivo') as HTMLInputElement;

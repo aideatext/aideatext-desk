@@ -48,3 +48,6 @@ Thumbs.db
 # === Logs ===
 *.log
 npm-debug.log*
+
+# Workspace de ejecucion SDD (scratch, no versionado)
+.superpowers/
