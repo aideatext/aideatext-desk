@@ -531,23 +531,37 @@ borre después.
 
 ## 7. Pendientes antes de implementar
 
+Ninguno bloquea el plan de implementación. Se resuelven durante la construcción.
+
 | # | Pendiente | Responsable | Bloquea |
 |---|---|---|---|
-| 1 | Confirmar lenguaje de API (Node/TS asumido) | Manuel | Plan de implementación |
-| 2 | Verificar USD como moneda de liquidación en Stripe | Manuel | Configuración de precios |
-| 3 | Confirmar mínimo de cobro de 30 min (propuesto) | Manuel | Función `quote` |
-| 4 | Decidir región de datos (México Central / Brasil Sur) | Por verificar | `infra/main.bicep` |
-| 5 | Confirmar límites de batch vs. transcripción rápida | Por verificar | Validación de subida |
-| 6 | Verificar vínculo vivo con UAM | Manuel | Lista de prospección |
-| 7 | Alta del buzón `first.contact.desk@aideatext.ai` | Manuel | Desbordamiento (§2.4) |
+| 1 | Verificar USD como moneda de liquidación en Stripe | Manuel | Configuración de precios |
+| 2 | Alta del buzón `first.contact.desk@aideatext.ai` | Manuel *(en curso)* | Desbordamiento (§2.4) |
+| 3 | Decidir región de datos (México Central / Brasil Sur) | Por verificar | `infra/main.bicep` |
+| 4 | Confirmar límites de batch vs. transcripción rápida | Por verificar | Validación de subida |
+| 5 | Verificar vínculo vivo con UAM | Manuel | Lista de prospección |
 
-### Decisiones cerradas en esta sesión
+### Decisiones cerradas
 
-- Muestra gratuita: **1 minuto / 1 página**, elegidos por el usuario, solicitando
-  expresamente el fragmento más difícil (§2.3)
-- Desbordamiento → **first.contact.desk@aideatext.ai** (§2.4)
-- Anti-abuso: límite + Turnstile + **hash de IP con salt rotatorio**, nunca la IP (§2.5)
-- Rotación de proveedor de captcha: **descartada en v01**
+| Decisión | § |
+|---|---|
+| **Node/TypeScript** para la API | 6 |
+| Muestra: **1 minuto / 1 página**, elegidos por el usuario, pidiendo el fragmento más difícil | 2.3 |
+| Desbordamiento → **first.contact.desk@aideatext.ai**, nunca un rechazo | 2.4 |
+| Anti-abuso: límite + Turnstile + **hash de IP con salt rotatorio**; la IP nunca se guarda | 2.5 |
+| Rotación de proveedor de captcha: **descartada en v01** | 2.5 |
+| **Mínimo de cobro: 30 minutos.** Es un piso, no un techo: sin límite superior de duración | 4 |
+
+**Razón de cerrar Node/TS:** el SHA-256 del comprobante de borrado se calcula en el
+navegador (JavaScript obligatorio: PDF.js, ffmpeg.wasm, Web Audio API) y se verifica en
+el servidor. Con Python esa lógica existiría dos veces en dos lenguajes; el día que una
+cambie y la otra no, el comprobante de borrado empieza a fallar — justo la función que
+sostiene el argumento de confianza del producto. Con Node/TS es el mismo archivo
+importado desde ambos lados y no pueden divergir.
+
+DESK no tiene NLP ni ciencia de datos —Azure Speech y Document Intelligence hacen el
+trabajo pesado en remoto—, así que la ventaja real de Python no aplica aquí. Es lo
+contrario de v61, donde spaCy y sentence-transformers hacen Python obligatorio.
 
 ## 8. Fuera de alcance en v01
 
