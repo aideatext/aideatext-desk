@@ -444,8 +444,8 @@ function repartirEnLineas(texto: string): string[] {
  * de UN carácter, y ningún `repeat()` podía ampliarlo. Cualquier cambio de
  * versión de PDF.js o de métricas de fuente habría volteado la prueba a
  * rojo sin explicación aparente.
- * Con reparto en líneas la extracción escala: 239 caracteres para el mismo
- * texto, margen de 139.
+ * Con reparto en líneas la extracción escala: 235 caracteres extraídos para
+ * ese mismo texto (240 de entrada), con margen de 135.
  */
 export async function makeTextPdf(pages: string[]): Promise<ArrayBuffer> {
   const doc = await PDFDocument.create();
