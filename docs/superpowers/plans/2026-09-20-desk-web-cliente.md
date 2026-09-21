@@ -1118,10 +1118,19 @@ const CONTACTO = 'first.contact.desk@aideatext.ai';
  */
 export function renderDiagnosis(d: PdfDiagnosis): string {
   const escaneadas = d.pages.filter((p) => p.kind === 'escaneado').length;
+  // Se CUENTAN las de texto, no se restan las escaneadas. `pageCount -
+  // escaneadas` metia las paginas en blanco en el saco de "con texto", y
+  // `resumirPaginas` permite blancos tanto en `texto` como en `mixto` por
+  // diseno: los separadores de capitulo y versos vacios son normales en
+  // una tesis. Es la misma confusion de pagesBlank, ahora en la interfaz.
+  const conTexto = d.pages.filter((p) => p.kind === 'texto').length;
+  const enBlanco = d.pages.filter((p) => p.kind === 'vacia').length;
 
   if (d.convertibleInBrowser && d.overall === 'texto') {
     return `
-      <p><strong>${d.pageCount}</strong> páginas, todas con texto extraíble.</p>
+      <p><strong>${d.pageCount}</strong> páginas: ${conTexto} con texto extraíble${
+        enBlanco > 0 ? `, ${enBlanco} en blanco` : ''
+      }.</p>
       <p>Se convierte aquí mismo, sin subir nada.</p>
       <button id="descargar">Descargar Markdown</button>`;
   }
@@ -1129,7 +1138,9 @@ export function renderDiagnosis(d: PdfDiagnosis): string {
   if (d.overall === 'mixto') {
     return `
       <p><strong>${d.pageCount}</strong> páginas: documento <strong>mixto</strong>.</p>
-      <p>${d.pageCount - escaneadas} con texto, ${escaneadas} escaneadas.</p>
+      <p>${conTexto} con texto, ${escaneadas} escaneadas${
+        enBlanco > 0 ? `, ${enBlanco} en blanco` : ''
+      }.</p>
       <p>Convertimos ahora las que tienen texto. Para las escaneadas hace
          falta OCR en servidor.</p>
       <button id="descargar">Descargar Markdown</button>
@@ -1251,6 +1262,13 @@ zona.addEventListener('drop', (e) => {
 
 input.addEventListener('change', () => {
   const file = input.files?.[0];
+  // Se limpia el valor SIEMPRE, antes de procesar. Un input de archivo no
+  // dispara `change` si el usuario vuelve a elegir el mismo archivo, asi
+  // que sin esto el reintento tras un error no hace absolutamente nada:
+  // el usuario hace clic, elige su tesis otra vez, y la pantalla no
+  // cambia. Es el mismo callejon silencioso del boton mudo, entrando por
+  // otra puerta -- y justo en el camino de salida del error.
+  input.value = '';
   if (file) void procesar(file);
 });
 
@@ -1280,8 +1298,8 @@ async function procesar(file: File): Promise<void> {
           descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
         } catch {
           salida.innerHTML = `
-            <p>Algo fallo al convertir este documento.</p>
-            <p>Escribenos a
+            <p>Algo falló al convertir este documento.</p>
+            <p>Escríbenos a
                <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
                y lo revisamos contigo.</p>`;
         }
