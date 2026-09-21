@@ -3,41 +3,517 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DESK — Convertir PDF a Markdown sin subir nada</title>
+  <meta name="color-scheme" content="light" />
+  <title>DESK — Convierte tu PDF a Markdown sin subirlo a ningún lado</title>
   <meta name="description"
-        content="Convierte PDF a Markdown en tu navegador. Tu archivo nunca sale de tu computadora." />
+        content="Convierte tu PDF a Markdown en tu navegador. Tu archivo nunca sale de tu computadora: el navegador nos lo impide." />
   <!-- Icono propio, SVG local. No es cosmetica: sin el, el navegador pide
        /favicon.ico y la consola muestra un 404 en rojo. Este producto invita
        al usuario a abrir DevTools para comprobar que no hay subidas, asi que
        esa pestana tiene que estar limpia. -->
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <!-- Ni una sola referencia externa en toda esta pagina: ni tipografia de
+       Google, ni CDN, ni analitica, ni imagen remota. Dos razones, y la
+       segunda es la que manda. Primera: la CSP las bloquearia. Segunda: el
+       argumento entero de esta pagina es que nada sale de aqui; una pagina
+       que carga un recurso de un tercero mientras lo afirma se desmiente
+       sola en la pestana Red, delante del visitante que fue a comprobarlo.
+       Tipografias del sistema y SVG en linea, nada mas. -->
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 42rem;
-           margin: 2rem auto; padding: 0 1rem; line-height: 1.6; }
-    #zona { border: 2px dashed #888; padding: 3rem 1rem;
-            text-align: center; border-radius: 8px; cursor: pointer; }
-    #zona.activa { border-color: #000; background: #f5f5f5; }
-    .garantia { background: #f0f7f0; padding: 1rem; border-radius: 8px; }
-    button { font-size: 1rem; padding: .6rem 1.2rem; cursor: pointer; }
+    :root {
+      --tinta: #1a1a1a;
+      --tenue: #5b5b5b;
+      --linea: #d9d9d9;
+      --fondo: #ffffff;
+      --papel: #f6f6f4;
+      --acento: #14532d;
+      --acento-suave: #eef5f0;
+      --alerta: #8a1c1c;
+      --alerta-suave: #fbeeee;
+      --duda: #6b4e00;
+      --duda-suave: #fdf6e3;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      color: var(--tinta);
+      background: var(--fondo);
+      line-height: 1.65;
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .envoltura {
+      max-width: 44rem;
+      margin: 0 auto;
+      padding: 0 1.1rem;
+    }
+
+    h1 {
+      font-size: clamp(1.75rem, 6vw, 2.6rem);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin: 0 0 .75rem;
+    }
+
+    h2 {
+      font-size: clamp(1.3rem, 4.5vw, 1.7rem);
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      margin: 0 0 1rem;
+    }
+
+    h3 { font-size: 1.1rem; margin: 0 0 .6rem; }
+
+    p { margin: 0 0 1rem; }
+
+    a { color: var(--acento); }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .9em;
+      background: var(--papel);
+      border: 1px solid var(--linea);
+      border-radius: 4px;
+      padding: .1em .35em;
+      /* Una directiva de CSP es larga y no tiene espacios: en un telefono
+         desbordaria la pantalla si no se le permite partir. */
+      overflow-wrap: anywhere;
+    }
+
+    /* -- Cabecera ---------------------------------------------- */
+
+    .marca {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      padding: 1.5rem 0 0;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+
+    .marca svg { display: block; flex: none; }
+
+    .marca .sub {
+      font-weight: 400;
+      letter-spacing: 0;
+      color: var(--tenue);
+      font-size: .9rem;
+    }
+
+    .hero { padding: 2rem 0 0; }
+
+    .entradilla {
+      font-size: clamp(1.05rem, 3.6vw, 1.25rem);
+      color: var(--tenue);
+      margin: 0 0 1.75rem;
+      max-width: 34rem;
+    }
+
+    /* -- La herramienta ---------------------------------------- */
+
+    #zona {
+      border: 2px dashed #9a9a9a;
+      background: var(--papel);
+      padding: 2.5rem 1rem;
+      text-align: center;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    #zona:hover { border-color: var(--acento); }
+    #zona.activa { border-color: var(--acento); background: var(--acento-suave); }
+    #zona p { margin: 0; }
+    #zona .formatos { color: var(--tenue); font-size: .9rem; margin-top: .4rem; }
+
+    #resultado:not(:empty) {
+      margin-top: 1.25rem;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    #resultado p:last-child { margin-bottom: 0; }
+    #resultado button { margin: .3rem 0 .8rem; }
+
+    .letra-chica {
+      color: var(--tenue);
+      font-size: .92rem;
+      margin: .9rem 0 0;
+      text-align: center;
+    }
+
+    button {
+      font: inherit;
+      font-weight: 600;
+      color: #fff;
+      background: var(--acento);
+      border: 1px solid var(--acento);
+      border-radius: 8px;
+      padding: .7rem 1.2rem;
+      cursor: pointer;
+      /* Que no se salga de la pantalla en un telefono estrecho. */
+      max-width: 100%;
+      white-space: normal;
+    }
+
+    button:hover { background: #0e3d21; }
+    button:disabled { opacity: .6; cursor: progress; }
+
+    /* -- Secciones --------------------------------------------- */
+
+    section { padding: 2.75rem 0; border-top: 1px solid var(--linea); }
+
+    .numerado {
+      counter-reset: paso;
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.5rem;
+    }
+
+    .numerado li {
+      position: relative;
+      padding-left: 2.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .numerado li::before {
+      counter-increment: paso;
+      content: counter(paso) ".";
+      position: absolute;
+      left: 0;
+      font-weight: 700;
+      color: var(--acento);
+    }
+
+    /* -- Tarjetas de servicios --------------------------------- */
+
+    .tarjetas {
+      display: grid;
+      gap: 1.1rem;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 44rem) {
+      .tarjetas { grid-template-columns: 1fr 1fr; }
+    }
+
+    .tarjeta {
+      border: 1px solid var(--linea);
+      border-radius: 12px;
+      padding: 1.25rem;
+      background: var(--papel);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tarjeta .cierre {
+      margin-top: auto;
+      padding-top: .9rem;
+      margin-bottom: 0;
+      font-size: .95rem;
+      /* Un correo largo no cabe en la pantalla de un telefono si no puede
+         partirse; sin esto la tarjeta se desborda lateralmente. */
+      overflow-wrap: anywhere;
+    }
+
+    .gratis {
+      display: inline-block;
+      background: var(--acento-suave);
+      color: var(--acento);
+      border: 1px solid #c3ddcc;
+      border-radius: 999px;
+      padding: .1rem .6rem;
+      font-size: .82rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0 0 1rem;
+      font-size: .97rem;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--linea);
+      padding: .5rem .4rem;
+      text-align: left;
+    }
+
+    th { font-size: .88rem; color: var(--tenue); font-weight: 600; }
+
+    td + td, th + th { text-align: right; }
+
+    tr.nuestro td { font-weight: 700; color: var(--acento); }
+
+    /* -- Veredicto de la autocomprobacion ---------------------- */
+
+    #resultado-csp:not(:empty) {
+      margin-top: 1.1rem;
+      padding: 1.1rem 1.2rem;
+      border-radius: 10px;
+      border: 1px solid var(--linea);
+      background: #fff;
+    }
+
+    #resultado-csp p:last-child { margin-bottom: 0; }
+
+    .veredicto { font-size: 1.05rem; }
+    .veredicto.bien { color: var(--acento); }
+    .veredicto.mal  { color: var(--alerta); }
+    .veredicto.duda { color: var(--duda); }
+
+    /* El color de fondo refuerza el veredicto, pero NO lo sustituye: cada
+       desenlace se distingue por su texto, que se lee igual en un navegador
+       sin `:has()` y para quien no percibe el color. */
+    #resultado-csp:has(.bien) { background: var(--acento-suave); border-color: #c3ddcc; }
+    #resultado-csp:has(.mal)  { background: var(--alerta-suave); border-color: #e7c2c2; }
+    #resultado-csp:has(.duda) { background: var(--duda-suave);  border-color: #e6d7a8; }
+
+    .apunte { color: var(--tenue); font-size: .93rem; }
+
+    /* -- Quien esta detras ------------------------------------- */
+
+    .firma {
+      border-left: 3px solid var(--acento);
+      padding-left: 1rem;
+    }
+
+    .firma p:last-child { margin-bottom: 0; }
+
+    /* -- Pie --------------------------------------------------- */
+
+    footer {
+      border-top: 1px solid var(--linea);
+      padding: 1.75rem 0 3rem;
+      color: var(--tenue);
+      font-size: .92rem;
+    }
+
+    footer ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 .75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem 1.25rem;
+    }
+
+    footer p { margin: 0; }
   </style>
 </head>
 <body>
-  <h1>PDF a Markdown, sin subir nada</h1>
 
-  <p class="garantia">
-    <strong>Tu archivo no sale de tu computadora.</strong>
-    La conversión ocurre en tu navegador. Puedes comprobarlo: abre las
-    herramientas de desarrollo, pestaña <em>Red</em>, y verás que no hay
-    ninguna petición de subida.
-  </p>
+  <div class="envoltura">
 
-  <div id="zona">
-    <p>Arrastra tu PDF aquí, o haz clic para elegirlo</p>
-    <input type="file" id="archivo" accept="application/pdf" hidden />
+    <!-- Logotipo en SVG en linea. Un archivo aparte seria una peticion mas
+         en la pestana Red que el visitante viene a auditar; en linea, no
+         hay nada que explicar. -->
+    <div class="marca">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true" focusable="false">
+        <rect x="1.5" y="1.5" width="23" height="23" rx="6"
+              fill="none" stroke="#14532d" stroke-width="2"/>
+        <path d="M8 8h4.2a5 5 0 0 1 0 10H8z" fill="none"
+              stroke="#14532d" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <span>DESK</span>
+      <span class="sub">por AIdeaText</span>
+    </div>
+
+    <!-- ========== 1. La herramienta, primero ==========
+         El orden no es estetico. Un tesista con prisa convierte su PDF sin
+         leer una linea; un profesor que recibe el enlace ve la herramienta
+         funcionar antes de decidir si la reenvia. Poner la explicacion
+         delante habria cobrado un peaje de lectura a los dos. -->
+    <header class="hero">
+      <h1>Convierte tu PDF a Markdown sin subirlo a ningún lado</h1>
+      <p class="entradilla">
+        Tu archivo nunca sale de tu computadora. No es una promesa: el
+        navegador nos lo impide.
+      </p>
+
+      <div id="zona">
+        <p><strong>Arrastra tu PDF aquí</strong>, o haz clic para elegirlo</p>
+        <p class="formatos">Se analiza y se convierte en esta misma pestaña.</p>
+        <input type="file" id="archivo" accept="application/pdf" hidden />
+      </div>
+
+      <div id="resultado"></div>
+
+      <p class="letra-chica">Gratis, sin registro, sin límite de uso.</p>
+    </header>
+
+    <!-- ========== 2. La comprobacion ========== -->
+    <section id="comprobar">
+      <h2>¿Por qué puedes comprobarlo tú mismo?</h2>
+
+      <p>
+        La conversión ocurre dentro de tu navegador. Nosotros no recibimos tu
+        tesis, no la guardamos, y no podríamos hacerlo aunque quisiéramos:
+        este sitio declara una política de seguridad
+        (<code>connect-src 'self'</code>) que le prohíbe al navegador enviar
+        datos a cualquier otro servidor.
+      </p>
+
+      <p><strong>Dos formas de comprobarlo ahora mismo:</strong></p>
+
+      <ol class="numerado">
+        <li>
+          Abre las herramientas de desarrollo de tu navegador (F12), ve a la
+          pestaña <strong>Red</strong>, y convierte un PDF. No verás ninguna
+          petición de subida.
+        </li>
+        <li>
+          Pulsa el botón de abajo. Intentaremos enviar datos a un servidor
+          externo delante de ti, y verás al navegador impedirlo.
+        </li>
+      </ol>
+
+      <button id="probar-csp" type="button">
+        Intentar enviar datos a un servidor externo
+      </button>
+
+      <div id="resultado-csp"></div>
+    </section>
+
+    <!-- ========== 3. Lo que si cuesta ========== -->
+    <section id="servicios">
+      <h2>¿Tu documento necesita más que esto?</h2>
+
+      <div class="tarjetas">
+
+        <article class="tarjeta">
+          <h3>Tesis escaneada</h3>
+          <p>
+            Si tu PDF es un escaneo, no tiene texto que extraer: hace falta
+            OCR, y eso sí se procesa en un servidor.
+          </p>
+          <p>
+            Te procesamos <span class="gratis">una página gratis</span> para
+            que veas la calidad antes de decidir. Elige la peor escaneada —
+            la más borrosa, la más torcida. Preferimos que juzgues con el
+            caso difícil.
+          </p>
+          <p class="cierre">
+            Escríbenos a
+            <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+          </p>
+        </article>
+
+        <article class="tarjeta">
+          <h3>Entrevistas sin transcribir</h3>
+          <p>
+            Si tu investigación es cualitativa, probablemente tengas horas de
+            grabación esperando.
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Servicio</th>
+                <th scope="col">Por hora de audio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Rev</td>
+                <td>$90 USD</td>
+              </tr>
+              <tr class="nuestro">
+                <td>DESK</td>
+                <td>$8 USD</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            Te transcribimos <span class="gratis">el primer minuto gratis</span>.
+            Sube el minuto más difícil: donde varias personas hablan a la vez,
+            donde hay más ruido. Así ves la calidad en el peor caso.
+          </p>
+          <p class="cierre">
+            Escríbenos a
+            <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ========== 4. El comite de etica ========== -->
+    <section id="etica">
+      <h2>¿Tu investigación involucra personas?</h2>
+
+      <p>
+        Si entrevistaste a sujetos humanos, tu comité de ética probablemente
+        te exige declarar cómo se tratan esos datos. La mayoría de los
+        servicios de transcripción no te dan nada que puedas adjuntar.
+      </p>
+
+      <p>
+        Nosotros generamos una <strong>ficha de tratamiento de datos</strong>
+        por cada trabajo: región donde se procesó, tiempo de retención, hora
+        exacta de eliminación, cifrado, y la declaración de que tus datos no
+        se usan para entrenar ningún modelo.
+      </p>
+
+      <p>Es un anexo que puedes presentar a tu comité.</p>
+    </section>
+
+    <!-- ========== 5. Quien responde ========== -->
+    <section id="quien">
+      <h2>Quién está detrás</h2>
+
+      <div class="firma">
+        <p>
+          <strong>Manuel Vargas Alegría</strong> — Maestría en ESAN. Fue
+          administrador nacional del SIAGIE en Perú, el sistema de información
+          educativa que atendía a 7 millones de estudiantes y 95,000
+          instituciones. Fundador de AIdeaText, plataforma de análisis
+          semántico para escritura académica, con piloto en la Universidad
+          Femenina del Sagrado Corazón (UNIFE) y participación en los
+          programas NVIDIA Inception y AWS Startups.
+        </p>
+
+        <p>
+          DESK nació de una observación simple: los tesistas no necesitan otra
+          herramienta de IA. Necesitan que su trabajo inédito no termine en el
+          servidor de un desconocido.
+        </p>
+
+        <p>
+          <a href="mailto:mv@aideatext.com">mv@aideatext.com</a> ·
+          <a href="https://aideatext.ai">AIdeaText</a>
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      <ul>
+        <li>
+          <a href="https://github.com/aideatext/aideatext-desk">Código del proyecto</a>
+        </li>
+        <li>
+          <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos (SECURITY.md)</a>
+        </li>
+        <li>
+          <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+        </li>
+      </ul>
+      <p>DESK — desk.aideatext.ai · Parte del ecosistema AIdeaText.</p>
+    </footer>
+
   </div>
 
-  <div id="resultado"></div>
-
   <script type="module" src="/src/main.ts"></script>
+  <script type="module" src="/src/autocomprobacion.entry.ts"></script>
 </body>
 </html>
