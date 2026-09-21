@@ -553,10 +553,52 @@ Crear `web/src/pdf/diagnose.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import { diagnosePdf } from './diagnose';
+import { diagnosePdf, resumirPaginas } from './diagnose';
+import type { PageKind, PageReport, PdfDiagnosis } from './diagnose';
 import { makeTextPdf, makeImagePdf } from './fixtures';
 
 const LARGO = 'palabra '.repeat(30); // ~240 caracteres, supera el umbral de 100
+
+/** Construye páginas sintéticas para probar la agregación sin PDFs. */
+function paginas(...kinds: PageKind[]): PageReport[] {
+  return kinds.map((kind, i) => ({
+    pageNumber: i + 1,
+    kind,
+    charCount: kind === 'texto' ? 235 : 0,
+  }));
+}
+
+describe('resumirPaginas', () => {
+  // Las siete combinaciones posibles. Tres fallaban con la regla anterior,
+  // que exigía totalidad en vez de presencia, y ninguna estaba cubierta:
+  // ese hueco de cobertura es precisamente lo que ocultaba el defecto.
+  const casos: Array<{
+    kinds: PageKind[];
+    esperado: PdfDiagnosis['overall'];
+    nota: string;
+  }> = [
+    { kinds: [], esperado: 'vacio', nota: 'documento sin páginas' },
+    { kinds: ['texto', 'texto'], esperado: 'texto', nota: 'todas con texto' },
+    { kinds: ['escaneado', 'escaneado'], esperado: 'escaneado', nota: 'todas escaneadas' },
+    { kinds: ['vacia', 'vacia'], esperado: 'vacio', nota: 'todas vacías' },
+    { kinds: ['texto', 'escaneado'], esperado: 'mixto', nota: 'texto y escaneado' },
+    { kinds: ['texto', 'vacia'], esperado: 'texto', nota: 'texto con una página en blanco' },
+    { kinds: ['escaneado', 'vacia'], esperado: 'escaneado', nota: 'escaneado con una página en blanco' },
+  ];
+
+  for (const { kinds, esperado, nota } of casos) {
+    it(`${nota} → ${esperado}`, () => {
+      expect(resumirPaginas(paginas(...kinds))).toBe(esperado);
+    });
+  }
+
+  it('una tesis casi enteramente escaneada NO se reporta como vacía', () => {
+    // Regresión del defecto más grave: 199 páginas escaneadas más una
+    // portada vectorial daban `vacio`, es decir «tu documento está vacío».
+    const kinds: PageKind[] = [...Array(199).fill('escaneado' as PageKind), 'vacia'];
+    expect(resumirPaginas(paginas(...kinds))).toBe('escaneado');
+  });
+});
 
 describe('diagnosePdf', () => {
   it('clasifica como texto un PDF con capa de texto', async () => {
@@ -621,6 +663,38 @@ export interface PdfDiagnosis {
 }
 
 /**
+ * Resume las páginas en un veredicto de documento.
+ *
+ * Decide por **presencia**, no por totalidad. La versión anterior exigía que
+ * *todas* las páginas fueran de un tipo, y entonces una sola página `vacia`
+ * corrompía el veredicto en ambas direcciones:
+ *
+ * - Una tesis de 199 páginas escaneadas con una portada vectorial daba
+ *   `vacio`: **«tu documento está vacío»**. Es exactamente el fallo que
+ *   `pdfjs.ts` explica que el diseño existe para evitar — el nivel de página
+ *   respetaba ese criterio y el nivel de documento lo tiraba a la basura.
+ * - Un documento enteramente convertible con un verso en blanco daba
+ *   `mixto`, ofreciendo un OCR de pago que no hacía ninguna falta.
+ *
+ * Las páginas en blanco son comunes en una tesis —separadores de capítulo,
+ * versos vacíos, portadillas—, así que no era un caso exótico.
+ *
+ * Es una función pura sobre `PageReport[]` para poder probar las siete
+ * combinaciones sin construir un PDF distinto por cada una.
+ */
+export function resumirPaginas(
+  pages: readonly PageReport[]
+): PdfDiagnosis['overall'] {
+  const conTexto = pages.some((p) => p.kind === 'texto');
+  const escaneadas = pages.some((p) => p.kind === 'escaneado');
+
+  if (conTexto && escaneadas) return 'mixto';
+  if (conTexto) return 'texto';
+  if (escaneadas) return 'escaneado';
+  return 'vacio'; // cero páginas, o todas vacías
+}
+
+/**
  * Analiza un PDF enteramente en memoria. No realiza ninguna petición de red:
  * es el fundamento verificable de la promesa de privacidad (spec §3).
  */
@@ -632,49 +706,57 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
   const pageCount = doc.numPages;
   const pages: PageReport[] = [];
 
-  for (let n = 1; n <= pageCount; n++) {
-    const page = await doc.getPage(n);
-    const content = await page.getTextContent();
-    const charCount = content.items
-      .map((i) => ('str' in i ? i.str : ''))
-      .join('')
-      .trim().length;
+  // `finally`, no una llamada al final del cuerpo. Si `getPage`,
+  // `getTextContent` o `getOperatorList` rechazan —PDF corrupto, que es
+  // justo lo que esta herramienta existe para triar— el documento quedaría
+  // sin destruir, reteniendo el transporte del worker y la copia completa
+  // del archivo del usuario. En un producto cuyo argumento es que el archivo
+  // no va a ninguna parte, conservarlo en memoria de más es inaceptable.
+  try {
+    for (let n = 1; n <= pageCount; n++) {
+      const page = await doc.getPage(n);
+      const content = await page.getTextContent();
+      const charCount = content.items
+        .map((i) => ('str' in i ? i.str : ''))
+        // Se une sin separador a propósito: el espacio entre items que PDF.js
+        // representa por posición y no por carácter no debe inflar la cuenta.
+        // Es un subconteo leve y deliberadamente conservador. No cambiar a
+        // `join(' ')` sin recalibrar UMBRAL_TEXTO.
+        .join('')
+        .trim().length;
 
-    let kind: PageKind;
-    if (charCount >= UMBRAL_TEXTO) {
-      kind = 'texto';
-    } else {
-      // Solo operaciones de imagen auténticas. Deliberadamente NO cuenta
-      // `OPS.fill`: un relleno es una forma dibujada, no un escaneo, y
-      // aceptarlo clasificaría como escaneada cualquier página con un borde.
-      // El conjunto de opcodes vive en `pdfjs.ts` y se deriva por nombre;
-      // ver allí por qué no se enumeran a mano.
-      const ops = await page.getOperatorList();
-      kind = tieneOperadorDeImagen(ops.fnArray) ? 'escaneado' : 'vacia';
+      let kind: PageKind;
+      if (charCount >= UMBRAL_TEXTO) {
+        kind = 'texto';
+      } else {
+        // Solo operaciones de imagen auténticas. Deliberadamente NO cuenta
+        // `OPS.fill`: un relleno es una forma dibujada, no un escaneo, y
+        // aceptarlo clasificaría como escaneada cualquier página con un borde.
+        // El conjunto de opcodes vive en `pdfjs.ts` y se deriva por nombre;
+        // ver allí por qué no se enumeran a mano.
+        const ops = await page.getOperatorList();
+        kind = tieneOperadorDeImagen(ops.fnArray) ? 'escaneado' : 'vacia';
+      }
+
+      pages.push({ pageNumber: n, kind, charCount });
     }
-
-    pages.push({ pageNumber: n, kind, charCount });
+  } finally {
+    await doc.destroy();
   }
 
-  await doc.destroy();
-
-  const conTexto = pages.filter((p) => p.kind === 'texto').length;
-  const escaneadas = pages.filter((p) => p.kind === 'escaneado').length;
-
-  let overall: PdfDiagnosis['overall'];
-  if (conTexto === pages.length && conTexto > 0) overall = 'texto';
-  else if (escaneadas === pages.length && escaneadas > 0) overall = 'escaneado';
-  else if (conTexto > 0) overall = 'mixto';
-  else overall = 'vacio';
-
-  return { pageCount, pages, overall, convertibleInBrowser: conTexto > 0 };
+  return {
+    pageCount,
+    pages,
+    overall: resumirPaginas(pages),
+    convertibleInBrowser: pages.some((p) => p.kind === 'texto'),
+  };
 }
 ```
 
 - [ ] **Step 4: Ejecutar y verificar que pasa**
 
 Run: `cd web && npm test -- diagnose`
-Expected: PASS — 5 pruebas.
+Expected: PASS — 13 pruebas (8 de `resumirPaginas` + 5 de `diagnosePdf`).
 
 Si falla al resolver `pdfjs-dist/legacy/build/pdf.mjs`, verificar la ruta real con
 `ls web/node_modules/pdfjs-dist/legacy/build/` y ajustar el import **únicamente en
@@ -794,22 +876,27 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   const bloques: string[] = [];
   const pagesSkipped: number[] = [];
 
-  for (const reporte of diagnosis.pages) {
-    if (reporte.kind !== 'texto') {
-      pagesSkipped.push(reporte.pageNumber);
-      continue;
+  // `finally` por el mismo motivo que en `diagnose.ts`: si PDF.js rechaza a
+  // mitad del recorrido, el documento quedaría sin destruir, reteniendo el
+  // transporte del worker y la copia completa del archivo del usuario.
+  try {
+    for (const reporte of diagnosis.pages) {
+      if (reporte.kind !== 'texto') {
+        pagesSkipped.push(reporte.pageNumber);
+        continue;
+      }
+      const page = await doc.getPage(reporte.pageNumber);
+      const content = await page.getTextContent();
+      const texto = content.items
+        .map((i) => ('str' in i ? i.str : ''))
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      bloques.push(`## Página ${reporte.pageNumber}\n\n${texto}`);
     }
-    const page = await doc.getPage(reporte.pageNumber);
-    const content = await page.getTextContent();
-    const texto = content.items
-      .map((i) => ('str' in i ? i.str : ''))
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    bloques.push(`## Página ${reporte.pageNumber}\n\n${texto}`);
+  } finally {
+    await doc.destroy();
   }
-
-  await doc.destroy();
 
   return {
     markdown: bloques.join('\n\n'),
@@ -828,7 +915,7 @@ Expected: PASS — 5 pruebas.
 - [ ] **Step 5: Ejecutar la suite completa**
 
 Run: `cd web && npm test`
-Expected: PASS — 17 pruebas en total (4 hash + 3 fixtures + 5 diagnose + 5 toMarkdown).
+Expected: PASS — 27 pruebas en total (4 hash + 5 fixtures + 13 diagnose + 5 toMarkdown).
 
 - [ ] **Step 6: Commit**
 
@@ -1254,7 +1341,7 @@ git push
 
 Al terminar las seis tareas, comprobar:
 
-- [ ] `cd web && npm test` — 22 pruebas en verde
+- [ ] `cd web && npm test` — 32 pruebas en verde
 - [ ] `cd web && npm run build` — sin errores de TypeScript
 - [ ] https://desk.aideatext.ai carga
 - [ ] Un PDF de texto se convierte y descarga correctamente
