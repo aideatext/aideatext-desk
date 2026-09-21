@@ -699,11 +699,22 @@ export function resumirPaginas(
  * es el fundamento verificable de la promesa de privacidad (spec §3).
  */
 export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
-  const doc = await pdfjs.getDocument(loadOptions(data)).promise;
+  // Se retiene la TAREA de carga, no solo su promesa. Si `getDocument`
+  // rechaza -- PDF cifrado, cabecera corrupta, fallo del worker -- la
+  // promesa rechaza pero el worker dedicado y la copia completa del
+  // archivo del usuario siguen vivos: PDF.js solo los libera con
+  // `task.destroy()`, nunca por el rechazo de la promesa.
+  //
+  // No es hipotetico: la lista de verificacion final de este plan incluye
+  // probar un PDF protegido con contrasena, y `main.ts` ya tiene copy para
+  // ese caso. Ademas, desde que `loadOptions` copia el buffer, lo que se
+  // filtraria es un duplicado COMPLETO del archivo, no una vista.
+  //
+  // `task.destroy()` tambien libera el documento, asi que sustituye a
+  // `doc.destroy()` y cubre los dos caminos con un solo `finally`.
+  const task = pdfjs.getDocument(loadOptions(data));
 
-  // Se captura ANTES de destruir el documento: `doc.numPages` no es
-  // accesible después de `doc.destroy()`.
-  const pageCount = doc.numPages;
+  let pageCount = 0;
   const pages: PageReport[] = [];
 
   // `finally`, no una llamada al final del cuerpo. Si `getPage`,
@@ -713,6 +724,9 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
   // del archivo del usuario. En un producto cuyo argumento es que el archivo
   // no va a ninguna parte, conservarlo en memoria de más es inaceptable.
   try {
+    const doc = await task.promise;
+    pageCount = doc.numPages;
+
     for (let n = 1; n <= pageCount; n++) {
       const page = await doc.getPage(n);
       const content = await page.getTextContent();
@@ -741,7 +755,7 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
       pages.push({ pageNumber: n, kind, charCount });
     }
   } finally {
-    await doc.destroy();
+    await task.destroy();
   }
 
   return {
@@ -906,16 +920,28 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   const diagnosis = await diagnosePdf(data);
   const sourceHash = await sha256Hex(data);
 
-  const doc = await pdfjs.getDocument(loadOptions(data)).promise;
+  // Se retiene la TAREA de carga, no solo su promesa. Si `getDocument`
+  // rechaza -- PDF cifrado, cabecera corrupta, fallo del worker -- la
+  // promesa rechaza pero el worker dedicado y la copia completa del
+  // archivo del usuario siguen vivos: PDF.js solo los libera con
+  // `task.destroy()`, nunca por el rechazo de la promesa.
+  //
+  // No es hipotetico: la lista de verificacion final de este plan incluye
+  // probar un PDF protegido con contrasena, y `main.ts` ya tiene copy para
+  // ese caso. Ademas, desde que `loadOptions` copia el buffer, lo que se
+  // filtraria es un duplicado COMPLETO del archivo, no una vista.
+  //
+  // `task.destroy()` tambien libera el documento, asi que sustituye a
+  // `doc.destroy()` y cubre los dos caminos con un solo `finally`.
+  const task = pdfjs.getDocument(loadOptions(data));
 
   const bloques: string[] = [];
   const pagesScanned: number[] = [];
   const pagesBlank: number[] = [];
 
-  // `finally` por el mismo motivo que en `diagnose.ts`: si PDF.js rechaza a
-  // mitad del recorrido, el documento quedaría sin destruir, reteniendo el
-  // transporte del worker y la copia completa del archivo del usuario.
   try {
+    const doc = await task.promise;
+
     for (const reporte of diagnosis.pages) {
       if (reporte.kind !== 'texto') {
         if (reporte.kind === 'escaneado') pagesScanned.push(reporte.pageNumber);
@@ -932,7 +958,7 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
       bloques.push(`## Página ${reporte.pageNumber}\n\n${texto}`);
     }
   } finally {
-    await doc.destroy();
+    await task.destroy();
   }
 
   return {
@@ -948,7 +974,7 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
 - [ ] **Step 4: Ejecutar y verificar que pasa**
 
 Run: `cd web && npm test -- toMarkdown`
-Expected: PASS — 5 pruebas.
+Expected: PASS — 7 pruebas.
 
 - [ ] **Step 5: Ejecutar la suite completa**
 
