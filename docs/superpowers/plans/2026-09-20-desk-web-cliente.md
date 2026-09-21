@@ -18,7 +18,10 @@
 - **Ningún archivo de usuario se escribe a disco ni a `localStorage`.**
 - **Idioma de la interfaz: español.** Copy de cara al usuario en español de México.
 - **Nunca decir "no se puede".** Todo límite excedido deriva a `first.contact.desk@aideatext.ai` (spec §2.4).
-- Node ≥ 20 para el entorno de construcción.
+- **Node ≥ 22.12** para el entorno de construcción y de CI. No es arbitrario: `vitest@5`
+  declara `engines.node: "^22.12.0 || ^24.0.0 || >=26.0.0"`. Con Node 20, `npm test` falla
+  mientras `npm run build` sigue funcionando —`vite@6` sí acepta Node 20—, lo que produce un
+  fallo de CI desconcertante. La máquina de desarrollo corre Node v24.18.0.
 
 ---
 
@@ -1031,7 +1034,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Node 24, no 20: vitest@5 exige ^22.12.0 || ^24.0.0 || >=26.0.0.
+          # Con Node 20 este workflow fallaria en `npm test` pero pasaria el
+          # build, porque vite@6 si acepta Node 20 -- un fallo desconcertante.
+          node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
 
