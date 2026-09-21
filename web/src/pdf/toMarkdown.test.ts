@@ -20,13 +20,17 @@ describe('pdfToMarkdown', () => {
   it('informa cuantas paginas convirtio', async () => {
     const r = await pdfToMarkdown(await makeTextPdf([LARGO, LARGO, LARGO]));
     expect(r.pagesConverted).toBe(3);
-    expect(r.pagesSkipped).toEqual([]);
+    expect(r.pagesScanned).toEqual([]);
+    expect(r.pagesBlank).toEqual([]);
   });
 
-  it('omite las paginas escaneadas y las reporta', async () => {
+  it('omite las paginas escaneadas y las reporta como facturables', async () => {
     const r = await pdfToMarkdown(await makeImagePdf(2));
     expect(r.pagesConverted).toBe(0);
-    expect(r.pagesSkipped).toEqual([1, 2]);
+    expect(r.pagesScanned).toEqual([1, 2]);
+    // Escaneadas, no en blanco: son cosas distintas y solo las primeras
+    // requieren OCR de pago.
+    expect(r.pagesBlank).toEqual([]);
   });
 
   it('el sourceHash coincide con el sha256 del archivo de entrada', async () => {

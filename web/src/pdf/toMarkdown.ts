@@ -1,3 +1,5 @@
+// `tieneOperadorDeImagen` NO se importa aqui: `diagnosePdf` ya clasifico
+// las paginas. Importarlo sin usarlo es error TS6133 con noUnusedLocals.
 import { pdfjs, loadOptions } from './pdfjs';
 import { diagnosePdf } from './diagnose';
 import { sha256Hex } from '../lib/hash';
@@ -7,8 +9,21 @@ export interface ConversionResult {
   /** SHA-256 del PDF de origen. El archivo no sale del navegador. */
   sourceHash: string;
   pagesConverted: number;
-  /** Números de página omitidas por no tener texto extraíble. */
-  pagesSkipped: number[];
+  /**
+   * Páginas escaneadas: tienen contenido, pero requiere OCR en servidor.
+   * Son las facturables, y las unicas que deben mostrarse como pendientes.
+   */
+  pagesScanned: number[];
+  /**
+   * Páginas sin texto y sin imagen. No hay nada que convertir ni que cobrar.
+   *
+   * Se separan de `pagesScanned` a proposito. Un unico campo `pagesSkipped`
+   * mezclaba ambas, perdiendo una distincion que `diagnosePdf` ya habia
+   * calculado -- e invitando a cobrar OCR por los separadores de capitulo y
+   * versos en blanco que abundan en una tesis. Es el mismo descuido que
+   * corrompia el veredicto del documento antes de `resumirPaginas`.
+   */
+  pagesBlank: number[];
 }
 
 /**
@@ -29,7 +44,8 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   const doc = await pdfjs.getDocument(loadOptions(data)).promise;
 
   const bloques: string[] = [];
-  const pagesSkipped: number[] = [];
+  const pagesScanned: number[] = [];
+  const pagesBlank: number[] = [];
 
   // `finally` por el mismo motivo que en `diagnose.ts`: si PDF.js rechaza a
   // mitad del recorrido, el documento quedaría sin destruir, reteniendo el
@@ -37,7 +53,8 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   try {
     for (const reporte of diagnosis.pages) {
       if (reporte.kind !== 'texto') {
-        pagesSkipped.push(reporte.pageNumber);
+        if (reporte.kind === 'escaneado') pagesScanned.push(reporte.pageNumber);
+        else pagesBlank.push(reporte.pageNumber);
         continue;
       }
       const page = await doc.getPage(reporte.pageNumber);
@@ -57,6 +74,7 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
     markdown: bloques.join('\n\n'),
     sourceHash,
     pagesConverted: bloques.length,
-    pagesSkipped,
+    pagesScanned,
+    pagesBlank,
   };
 }
