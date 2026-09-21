@@ -57,7 +57,18 @@ export function tieneOperadorDeImagen(fnArray: readonly number[]): boolean {
 /** Opciones comunes de carga. */
 export function loadOptions(data: ArrayBuffer) {
   return {
-    data: new Uint8Array(data),
+    // `data.slice(0)` copia. NO cambiar a `new Uint8Array(data)`: eso es una
+    // VISTA sobre el búfer del llamante, y PDF.js lo transfiere al worker,
+    // dejándolo **detached** (byteLength 0) en cuanto se llama a
+    // `getDocument`. El llamante se queda sin su propio archivo.
+    //
+    // El fallo no avisa. `crypto.subtle.digest` sobre un búfer detached no
+    // lanza: devuelve el SHA-256 del vacío (`e3b0c442…`), así que el
+    // `sourceHash` sería idéntico para todos los archivos. Y un segundo
+    // `getDocument` sobre el mismo búfer —diagnosticar y luego convertir, que
+    // es justo el recorrido del producto— revienta con «Cannot perform
+    // Construct on a detached ArrayBuffer».
+    data: new Uint8Array(data.slice(0)),
     // Sin red: evita descargar fuentes y mapas de caracteres remotos, lo
     // que contradiría la garantía de que nada sale del navegador.
     disableFontFace: true,
