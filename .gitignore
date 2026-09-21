@@ -1,0 +1,50 @@
+# === Secretos: NUNCA versionar ===
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+local.settings.json
+azure.json
+**/secrets/
+
+# === Dependencias ===
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# === Build ===
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# === Azure Functions ===
+bin/
+obj/
+.python_packages/
+
+# === Archivos de usuario: jamas deben llegar al repo ===
+uploads/
+tmp/
+*.wav
+*.mp3
+*.mp4
+*.m4a
+*.ogg
+*.flac
+*.webm
+
+# === Sistema operativo / editor ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# === Logs ===
+*.log
+npm-debug.log*
