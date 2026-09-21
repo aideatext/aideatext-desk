@@ -80,7 +80,10 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vitest/globals"]
+    // "vite/client" es obligatorio: el array explicito desactiva la
+    // inclusion automatica, y sin el, el import del worker con `?url`
+    // es TS2307 y `npm run build` no llega siquiera a vite.
+    "types": ["vitest/globals", "vite/client"]
   },
   "include": ["src"]
 }
@@ -1134,13 +1137,29 @@ export function renderDiagnosis(d: PdfDiagnosis): string {
          <a href="mailto:${CONTACTO}">${CONTACTO}</a></p>`;
   }
 
+  if (d.overall === 'escaneado') {
+    return `
+      <p><strong>${d.pageCount}</strong> páginas escaneadas, sin capa de texto.</p>
+      <p>Este documento necesita OCR, que se procesa en servidor.
+         Puedes probar <strong>una página gratis</strong> antes de decidir:
+         elige la peor escaneada, para ver la calidad en el caso más difícil.</p>
+      <p>Escríbenos a <a href="mailto:${CONTACTO}">${CONTACTO}</a>
+         y evaluamos tu caso.</p>`;
+  }
+
+  // `vacio` tiene su propio mensaje y NO ofrece OCR de pago.
+  //
+  // Un documento sin texto Y sin imagenes no tiene nada que reconocer: el
+  // OCR no le serviria de nada y cobrarselo seria vender humo. Fundir esta
+  // rama con `escaneado` reintroducia en la interfaz justo la confusion que
+  // la Task 4 pago una ronda por separar en los datos (`pagesScanned` vs
+  // `pagesBlank`). Un arreglo en la capa de datos no sirve si la capa de
+  // presentacion vuelve a mezclarlo.
   return `
-    <p><strong>${d.pageCount}</strong> páginas escaneadas, sin capa de texto.</p>
-    <p>Este documento necesita OCR, que se procesa en servidor.
-       Puedes probar <strong>una página gratis</strong> antes de decidir:
-       elige la peor escaneada, para ver la calidad en el caso más difícil.</p>
+    <p><strong>${d.pageCount}</strong> páginas, sin texto ni imágenes.</p>
+    <p>Puede que el archivo esté dañado, protegido, o realmente vacío.</p>
     <p>Escríbenos a <a href="mailto:${CONTACTO}">${CONTACTO}</a>
-       y evaluamos tu caso.</p>`;
+       y lo revisamos contigo.</p>`;
 }
 ```
 
@@ -1245,8 +1264,27 @@ async function procesar(file: File): Promise<void> {
     const boton = document.getElementById('descargar');
     if (boton) {
       boton.addEventListener('click', async () => {
-        const r = await pdfToMarkdown(data);
-        descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
+        // `catch` PROPIO, no el del `try` de abajo: el rechazo de un
+        // callback asincrono no se propaga al try que lo registro.
+        //
+        // Sin esto, si `pdfToMarkdown` falla el usuario hace clic y NO
+        // OCURRE NADA: ni archivo, ni mensaje, ni cambio en pantalla. Es
+        // el callejon sin salida mas silencioso posible, justo lo que la
+        // regla de «nunca decir no se puede» existe para evitar.
+        //
+        // Y no es hipotetico: `sha256Hex` usa `crypto.subtle`, que no
+        // existe fuera de un contexto seguro. Servir con `vite --host`
+        // sobre una IP de red local deja el boton mudo.
+        try {
+          const r = await pdfToMarkdown(data);
+          descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
+        } catch {
+          salida.innerHTML = `
+            <p>Algo fallo al convertir este documento.</p>
+            <p>Escribenos a
+               <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+               y lo revisamos contigo.</p>`;
+        }
       });
     }
   } catch {
