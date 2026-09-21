@@ -2,7 +2,9 @@ import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { configureWorker } from './pdf/pdfjs';
 import { diagnosePdf } from './pdf/diagnose';
 import { pdfToMarkdown } from './pdf/toMarkdown';
+import { extraerTextoCrudo } from './pdf/textoCrudo';
 import { renderDiagnosis } from './ui/report';
+import { renderAhorro } from './ui/tokens';
 
 // El worker se sirve desde nuestro propio dominio, no desde un CDN:
 // una peticion externa contradiria la garantia de "nada sale de aqui".
@@ -16,6 +18,10 @@ configureWorker(workerUrl);
 const zona = document.getElementById('zona') as HTMLDivElement;
 const input = document.getElementById('archivo') as HTMLInputElement;
 const salida = document.getElementById('resultado') as HTMLDivElement;
+// El recuadro del ahorro de tokens. Va en su propio contenedor, debajo del
+// informe, para no tocar lo que `renderDiagnosis` escribe: ese HTML esta
+// probado y no tiene por que enterarse de esta medida.
+const salidaAhorro = document.getElementById('ahorro') as HTMLDivElement | null;
 
 zona.addEventListener('click', () => input.click());
 
@@ -47,6 +53,11 @@ input.addEventListener('change', () => {
 
 async function procesar(file: File): Promise<void> {
   salida.innerHTML = '<p>Analizando en tu navegador…</p>';
+  // Se limpia SIEMPRE al empezar: si no, el ahorro medido sobre el archivo
+  // anterior se quedaria en pantalla junto al diagnostico del nuevo, que es
+  // la peor forma posible de equivocarse con un numero que el usuario va a
+  // creerse.
+  if (salidaAhorro) salidaAhorro.innerHTML = '';
   try {
     const data = await file.arrayBuffer();
     const diagnosis = await diagnosePdf(data);
@@ -69,6 +80,7 @@ async function procesar(file: File): Promise<void> {
         try {
           const r = await pdfToMarkdown(data);
           descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
+          await mostrarAhorro(data, r.markdown, r.pagesScanned.length);
         } catch {
           salida.innerHTML = `
             <p>Algo falló al convertir este documento.</p>
@@ -85,6 +97,40 @@ async function procesar(file: File): Promise<void> {
       <p>Escríbenos a
          <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
          y lo revisamos.</p>`;
+  }
+}
+
+/**
+ * Mide y muestra el ahorro de tokens del archivo que se acaba de convertir.
+ *
+ * Nunca lanza. Va dentro del `try` que decide si la CONVERSION fallo, y si
+ * dejara escapar un error el usuario veria «algo fallo al convertir» con su
+ * Markdown ya descargado en la carpeta: un mensaje falso sobre lo unico que
+ * de verdad le importaba.
+ *
+ * Tampoco se queda callada si no puede medir. Un recuadro vacio despues de
+ * anunciar la medicion es el mismo callejon silencioso que este proyecto ya
+ * pago una vez con el boton mudo.
+ */
+async function mostrarAhorro(
+  data: ArrayBuffer,
+  markdown: string,
+  paginasEscaneadas: number
+): Promise<void> {
+  if (!salidaAhorro) return;
+  salidaAhorro.innerHTML = '<p class="apunte">Midiendo el ahorro…</p>';
+  try {
+    const crudo = await extraerTextoCrudo(data);
+    salidaAhorro.innerHTML = renderAhorro({
+      caracteresPdf: crudo.length,
+      caracteresMarkdown: markdown.length,
+      paginasEscaneadas,
+    });
+  } catch {
+    salidaAhorro.innerHTML = `
+      <p class="apunte">Tu Markdown ya se descargó. No pudimos medir el
+         ahorro de tokens de este archivo, y preferimos decírtelo a
+         enseñarte un número inventado.</p>`;
   }
 }
 
