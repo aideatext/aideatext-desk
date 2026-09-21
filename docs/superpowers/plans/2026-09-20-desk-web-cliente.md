@@ -838,6 +838,21 @@ describe('pdfToMarkdown', () => {
     expect(r.pagesBlank).toEqual([]);
   });
 
+  it('una pagina en blanco va a pagesBlank, no a pagesScanned', async () => {
+    // La segunda pagina tiene 2 caracteres: por debajo del umbral y sin
+    // imagen, asi que `diagnosePdf` la clasifica `vacia`.
+    //
+    // Esta prueba existe porque las demas solo afirman `pagesBlank: []`, y
+    // una asercion de arreglo vacio sigue verde aunque la rama este muerta
+    // o empuje al arreglo equivocado. Es la misma forma de prueba que no
+    // puede fallar que ocultaba el bug del hash sobre buffer detached.
+    // Invierte la condicion en toMarkdown.ts y esta prueba debe ponerse roja.
+    const r = await pdfToMarkdown(await makeTextPdf([LARGO, 'hi']));
+    expect(r.pagesConverted).toBe(1);
+    expect(r.pagesScanned).toEqual([]);
+    expect(r.pagesBlank).toEqual([2]);
+  });
+
   it('el sourceHash coincide con el sha256 del archivo de entrada', async () => {
     const pdf = await makeTextPdf([LARGO]);
     const r = await pdfToMarkdown(pdf);
@@ -938,7 +953,7 @@ Expected: PASS — 5 pruebas.
 - [ ] **Step 5: Ejecutar la suite completa**
 
 Run: `cd web && npm test`
-Expected: PASS — 27 pruebas en total (4 hash + 5 fixtures + 13 diagnose + 5 toMarkdown).
+Expected: PASS — 29 pruebas en total (4 hash + 5 fixtures + 13 diagnose + 7 toMarkdown).
 
 - [ ] **Step 6: Commit**
 
@@ -1366,7 +1381,7 @@ git push
 
 Al terminar las seis tareas, comprobar:
 
-- [ ] `cd web && npm test` — 32 pruebas en verde
+- [ ] `cd web && npm test` — 34 pruebas en verde
 - [ ] `cd web && npm run build` — sin errores de TypeScript
 - [ ] https://desk.aideatext.ai carga
 - [ ] Un PDF de texto se convierte y descarga correctamente
