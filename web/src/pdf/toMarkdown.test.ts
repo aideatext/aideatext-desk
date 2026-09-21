@@ -55,6 +55,17 @@ describe('pdfToMarkdown', () => {
   });
 
   /**
+   * Contraparte de la prueba equivalente en `diagnose.test.ts`. Aqui el
+   * rechazo llega desde `diagnosePdf`, a quien `pdfToMarkdown` llama primero:
+   * lo que se comprueba es que no se lo traga ni devuelve un resultado vacio
+   * fingiendo que la conversion fue bien.
+   */
+  it('propaga el error de un PDF ilegible en vez de devolver vacio', async () => {
+    const basura = new TextEncoder().encode('esto no es un PDF').buffer as ArrayBuffer;
+    await expect(pdfToMarkdown(basura)).rejects.toThrow(/Invalid PDF/i);
+  });
+
+  /**
    * Regresión: `loadOptions` pasaba a PDF.js una VISTA del búfer del llamante,
    * que el worker transfería, dejándolo detached. Esta prueba calcula el hash
    * esperado ANTES de convertir a propósito: la prueba anterior lo calcula

@@ -56,11 +56,22 @@ export function resumirPaginas(
  * es el fundamento verificable de la promesa de privacidad (spec §3).
  */
 export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
-  const doc = await pdfjs.getDocument(loadOptions(data)).promise;
+  // Se retiene la TAREA de carga, no solo su promesa. Si `getDocument`
+  // rechaza -- PDF cifrado, cabecera corrupta, fallo del worker -- la
+  // promesa rechaza pero el worker dedicado y la copia completa del
+  // archivo del usuario siguen vivos: PDF.js solo los libera con
+  // `task.destroy()`, nunca por el rechazo de la promesa.
+  //
+  // No es hipotetico: la lista de verificacion final de este plan incluye
+  // probar un PDF protegido con contrasena, y `main.ts` ya tiene copy para
+  // ese caso. Ademas, desde que `loadOptions` copia el buffer, lo que se
+  // filtraria es un duplicado COMPLETO del archivo, no una vista.
+  //
+  // `task.destroy()` tambien libera el documento, asi que sustituye a
+  // `doc.destroy()` y cubre los dos caminos con un solo `finally`.
+  const task = pdfjs.getDocument(loadOptions(data));
 
-  // Se captura ANTES de destruir el documento: `doc.numPages` no es
-  // accesible después de `doc.destroy()`.
-  const pageCount = doc.numPages;
+  let pageCount = 0;
   const pages: PageReport[] = [];
 
   // `finally`, no una llamada al final del cuerpo. Si `getPage`,
@@ -70,6 +81,9 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
   // del archivo del usuario. En un producto cuyo argumento es que el archivo
   // no va a ninguna parte, conservarlo en memoria de más es inaceptable.
   try {
+    const doc = await task.promise;
+    pageCount = doc.numPages;
+
     for (let n = 1; n <= pageCount; n++) {
       const page = await doc.getPage(n);
       const content = await page.getTextContent();
@@ -98,7 +112,7 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
       pages.push({ pageNumber: n, kind, charCount });
     }
   } finally {
-    await doc.destroy();
+    await task.destroy();
   }
 
   return {

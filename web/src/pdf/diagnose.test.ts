@@ -76,4 +76,19 @@ describe('diagnosePdf', () => {
     const d = await diagnosePdf(await makeImagePdf(1));
     expect(d.convertibleInBrowser).toBe(false);
   });
+
+  /**
+   * Primera prueba que ejerce el camino de rechazo de `getDocument`. Importa
+   * porque es el camino que el usuario alcanza primero: un PDF cifrado o
+   * corrupto revienta aqui, en `diagnosePdf`, antes de llegar a convertir.
+   *
+   * Afirma lo observable: que el error se propaga en vez de quedar tragado y
+   * que la llamada termina en vez de colgarse (lo garantiza el timeout de
+   * Vitest). NO demuestra que el `finally` liberase la tarea de carga; ver en
+   * el informe por que esa mitad no es observable en este entorno.
+   */
+  it('propaga el error de un PDF ilegible en vez de colgarse', async () => {
+    const basura = new TextEncoder().encode('esto no es un PDF').buffer as ArrayBuffer;
+    await expect(diagnosePdf(basura)).rejects.toThrow(/Invalid PDF/i);
+  });
 });

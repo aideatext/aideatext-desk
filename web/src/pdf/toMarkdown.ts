@@ -41,16 +41,28 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   const diagnosis = await diagnosePdf(data);
   const sourceHash = await sha256Hex(data);
 
-  const doc = await pdfjs.getDocument(loadOptions(data)).promise;
+  // Se retiene la TAREA de carga, no solo su promesa. Si `getDocument`
+  // rechaza -- PDF cifrado, cabecera corrupta, fallo del worker -- la
+  // promesa rechaza pero el worker dedicado y la copia completa del
+  // archivo del usuario siguen vivos: PDF.js solo los libera con
+  // `task.destroy()`, nunca por el rechazo de la promesa.
+  //
+  // No es hipotetico: la lista de verificacion final de este plan incluye
+  // probar un PDF protegido con contrasena, y `main.ts` ya tiene copy para
+  // ese caso. Ademas, desde que `loadOptions` copia el buffer, lo que se
+  // filtraria es un duplicado COMPLETO del archivo, no una vista.
+  //
+  // `task.destroy()` tambien libera el documento, asi que sustituye a
+  // `doc.destroy()` y cubre los dos caminos con un solo `finally`.
+  const task = pdfjs.getDocument(loadOptions(data));
 
   const bloques: string[] = [];
   const pagesScanned: number[] = [];
   const pagesBlank: number[] = [];
 
-  // `finally` por el mismo motivo que en `diagnose.ts`: si PDF.js rechaza a
-  // mitad del recorrido, el documento quedaría sin destruir, reteniendo el
-  // transporte del worker y la copia completa del archivo del usuario.
   try {
+    const doc = await task.promise;
+
     for (const reporte of diagnosis.pages) {
       if (reporte.kind !== 'texto') {
         if (reporte.kind === 'escaneado') pagesScanned.push(reporte.pageNumber);
@@ -67,7 +79,7 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
       bloques.push(`## Página ${reporte.pageNumber}\n\n${texto}`);
     }
   } finally {
-    await doc.destroy();
+    await task.destroy();
   }
 
   return {
