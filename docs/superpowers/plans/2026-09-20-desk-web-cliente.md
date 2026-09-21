@@ -51,8 +51,8 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "vite": "^6.0.0",
-    "vitest": "^2.1.0",
+    "vite": "^6.4.0",
+    "vitest": "^5.0.0",
     "pdf-lib": "^1.17.1"
   },
   "dependencies": {
@@ -102,10 +102,27 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 4: Instalar dependencias**
+- [ ] **Step 4: Instalar dependencias y verificar que Vite no se duplica**
 
 Run: `cd web && npm install`
 Expected: se crea `node_modules/` y `package-lock.json` sin errores.
+
+Comprobar que existe **una sola** cadena de herramientas de Vite:
+
+```bash
+cd web && find node_modules -name package.json -path "*/vite/package.json" \
+  | while read f; do printf "%-55s " "$f"; node -p "require('./$f').version"; done
+```
+
+Esperado: **exactamente una línea**, `node_modules/vite/package.json`.
+
+> **Por qué se verifica.** Los rangos son `vitest ^5.0.0` con `vite ^6.4.0` porque vitest 5
+> declara Vite como **peer** dependency (`^6.4.0 || ^7 || ^8`) y npm lo deduplica contra el
+> paquete de nivel superior. Con `vitest ^2.x` —que lo declara como dependencia **dura**
+> `^5.0.0`— npm instalaba tres Vite y tres esbuild distintos: las pruebas se transformaban con
+> esbuild 0.21.5 y producción compilaba con 0.25.12. **Una suite en verde dejaba de ser
+> evidencia sobre el artefacto que descarga el usuario**, y ahí vivían además las 5
+> vulnerabilidades que reportaba `npm audit`. Si aparece más de una línea, no continuar.
 
 - [ ] **Step 5: Escribir la prueba que falla**
 
