@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    // "vite/client" declara los modulos con sufijo de Vite, entre ellos
+    // `*?url`. Sin el, el import del worker en main.ts es TS2307 y
+    // `npm run build` no pasa de `tsc --noEmit`. Tiene que ir en este
+    // array explicito: `types` desactiva la inclusion automatica, asi que
+    // basta con que el paquete este instalado.
+    "types": ["vitest/globals", "vite/client"]
+  },
+  "include": ["src"]
+}

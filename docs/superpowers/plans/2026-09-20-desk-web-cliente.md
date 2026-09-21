@@ -18,7 +18,10 @@
 - **Ningún archivo de usuario se escribe a disco ni a `localStorage`.**
 - **Idioma de la interfaz: español.** Copy de cara al usuario en español de México.
 - **Nunca decir "no se puede".** Todo límite excedido deriva a `first.contact.desk@aideatext.ai` (spec §2.4).
-- Node ≥ 20 para el entorno de construcción.
+- **Node ≥ 22.12** para el entorno de construcción y de CI. No es arbitrario: `vitest@5`
+  declara `engines.node: "^22.12.0 || ^24.0.0 || >=26.0.0"`. Con Node 20, `npm test` falla
+  mientras `npm run build` sigue funcionando —`vite@6` sí acepta Node 20—, lo que produce un
+  fallo de CI desconcertante. La máquina de desarrollo corre Node v24.18.0.
 
 ---
 
@@ -51,8 +54,8 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "vite": "^6.0.0",
-    "vitest": "^2.1.0",
+    "vite": "^6.4.0",
+    "vitest": "^5.0.0",
     "pdf-lib": "^1.17.1"
   },
   "dependencies": {
@@ -77,7 +80,10 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vitest/globals"]
+    // "vite/client" es obligatorio: el array explicito desactiva la
+    // inclusion automatica, y sin el, el import del worker con `?url`
+    // es TS2307 y `npm run build` no llega siquiera a vite.
+    "types": ["vitest/globals", "vite/client"]
   },
   "include": ["src"]
 }
@@ -86,7 +92,9 @@
 - [ ] **Step 3: Crear `web/vite.config.ts`**
 
 ```ts
-import { defineConfig } from 'vite';
+// El import viene de 'vitest/config', NO de 'vite': la clave `test` no
+// existe en el tipo de configuración de Vite y el compilador la rechaza.
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   build: {
@@ -100,10 +108,27 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 4: Instalar dependencias**
+- [ ] **Step 4: Instalar dependencias y verificar que Vite no se duplica**
 
 Run: `cd web && npm install`
 Expected: se crea `node_modules/` y `package-lock.json` sin errores.
+
+Comprobar que existe **una sola** cadena de herramientas de Vite:
+
+```bash
+cd web && find node_modules -name package.json -path "*/vite/package.json" \
+  | while read f; do printf "%-55s " "$f"; node -p "require('./$f').version"; done
+```
+
+Esperado: **exactamente una línea**, `node_modules/vite/package.json`.
+
+> **Por qué se verifica.** Los rangos son `vitest ^5.0.0` con `vite ^6.4.0` porque vitest 5
+> declara Vite como **peer** dependency (`^6.4.0 || ^7 || ^8`) y npm lo deduplica contra el
+> paquete de nivel superior. Con `vitest ^2.x` —que lo declara como dependencia **dura**
+> `^5.0.0`— npm instalaba tres Vite y tres esbuild distintos: las pruebas se transformaban con
+> esbuild 0.21.5 y producción compilaba con 0.25.12. **Una suite en verde dejaba de ser
+> evidencia sobre el artefacto que descarga el usuario**, y ahí vivían además las 5
+> vulnerabilidades que reportaba `npm audit`. Si aparece más de una línea, no continuar.
 
 - [ ] **Step 5: Escribir la prueba que falla**
 
@@ -189,25 +214,135 @@ coincidir."
 ### Task 2: Generador de fixtures de PDF
 
 **Files:**
+- Create: `web/src/pdf/pdfjs.ts` *(punto de entrada único a PDF.js — ver nota)*
 - Create: `web/src/pdf/fixtures.ts`
 - Test: `web/src/pdf/fixtures.test.ts`
+
+> **Por qué `pdfjs.ts` nace aquí.** PDF.js se debe importar desde **una sola** ruta en
+> todo el proyecto. Si un módulo importara `pdfjs-dist/legacy/...` y otro
+> `pdfjs-dist`, Vite cargaría **dos instancias distintas**, y el
+> `GlobalWorkerOptions.workerSrc` configurado en una no aplicaría a la otra: el
+> diagnóstico fallaría en el navegador sin fallar en las pruebas. Las pruebas de
+> esta tarea ya necesitan PDF.js para verificar el contrato semántico de los
+> fixtures, así que el módulo nace aquí y las Tasks 3, 4 y 5 lo consumen.
 
 **Interfaces:**
 - Consumes: nada
 - Produces:
-  - `makeTextPdf(pages: string[]): Promise<ArrayBuffer>` — PDF con capa de texto real, una página por elemento del arreglo.
-  - `makeImagePdf(pageCount: number): Promise<ArrayBuffer>` — PDF cuyas páginas contienen únicamente un rectángulo dibujado, sin texto extraíble. Simula un escaneo.
+  - `makeTextPdf(pages: string[]): Promise<ArrayBuffer>` — PDF con capa de texto real, una página por elemento del arreglo. El texto se reparte en varias líneas (ver la nota en el código: una línea única se recorta al ancho de página y arruina el margen del umbral).
+  - `makeImagePdf(pageCount: number): Promise<ArrayBuffer>` — PDF cuyas páginas contienen **una imagen PNG real incrustada** (`embedPng` + `drawImage`), sin texto extraíble. Simula un escaneo. **No es un rectángulo dibujado:** tiene que emitir un operador `paintImageXObject` auténtico, que es lo que detecta la Task 3.
   - Las consumen las Tasks 3 y 4.
+  - Desde `pdfjs.ts`: `pdfjs` (reexport), `configureWorker(url: string): void` y
+    `loadOptions(data: ArrayBuffer)`. Los consumen las Tasks 3, 4 y 5.
 
 **Por qué existe esta tarea:** el diagnóstico de PDF no se puede probar sin PDFs de entrada deterministas. Generarlos en código evita comprometer archivos binarios al repositorio y hace las pruebas reproducibles.
 
-- [ ] **Step 1: Escribir la prueba que falla**
+- [ ] **Step 1: Crear el punto de entrada único `web/src/pdf/pdfjs.ts`**
+
+```ts
+/**
+ * Punto de entrada UNICO a PDF.js para todo el proyecto.
+ *
+ * Nadie más importa 'pdfjs-dist' directamente. Si dos módulos lo importaran
+ * por rutas distintas, el bundler cargaría dos instancias separadas y la
+ * configuración del worker aplicada a una no afectaría a la otra —
+ * un fallo que no aparece en las pruebas y sí en el navegador.
+ *
+ * Se usa la variante `legacy` porque es la que funciona tanto en el
+ * entorno Node de Vitest como en el navegador.
+ */
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+export const pdfjs = pdfjsLib;
+
+/** Configura el worker. Solo se invoca desde el navegador (`main.ts`). */
+export function configureWorker(url: string): void {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = url;
+}
+
+/**
+ * Opcodes de PDF.js que pintan contenido rasterizado.
+ *
+ * El conjunto se deriva **por nombre**, no enumerando constantes a mano, por
+ * dos razones aprendidas a golpes:
+ *
+ * 1. Una constante inexistente rompe `tsc --noEmit` y por tanto `npm run
+ *    build`. Ocurrió con `paintJpegXObject`, que no existe en pdfjs-dist 4.x.
+ *    Derivar por nombre no puede fallar así.
+ * 2. Enumerar a mano deja huecos. La lista escrita a ojo omitía
+ *    `paintImageMaskXObject`, y **los escáneres de documentos producen
+ *    imágenes bitonales que PDF codifica justamente como máscaras**: una tesis
+ *    escaneada real se habría clasificado como `vacia` en vez de `escaneado`,
+ *    diciéndole al usuario que su documento está vacío en lugar de ofrecerle
+ *    el OCR.
+ *
+ * En pdfjs-dist 4.10.38 esto resuelve a 8 opcodes (83–90).
+ */
+const OPS_DE_IMAGEN: ReadonlySet<number> = new Set(
+  Object.entries(pdfjsLib.OPS)
+    .filter(([nombre]) => /^paint.*Image/.test(nombre))
+    .map(([, codigo]) => codigo as number)
+);
+
+/**
+ * ¿La lista de operadores de una página pinta algún contenido rasterizado?
+ *
+ * Se prefiere el falso positivo al falso negativo: solo se consulta cuando la
+ * página ya tiene poco texto, así que clasificar de más como «escaneada»
+ * ofrece OCR innecesariamente —inocuo—, mientras que clasificar de menos le
+ * dice al usuario que su escaneo está vacío —caro y confuso—.
+ */
+export function tieneOperadorDeImagen(fnArray: readonly number[]): boolean {
+  return fnArray.some((fn) => OPS_DE_IMAGEN.has(fn));
+}
+
+/** Opciones comunes de carga. */
+export function loadOptions(data: ArrayBuffer) {
+  return {
+    data: new Uint8Array(data),
+    // Sin red: evita descargar fuentes y mapas de caracteres remotos, lo
+    // que contradiría la garantía de que nada sale del navegador.
+    disableFontFace: true,
+    isEvalSupported: false,
+    // Silencia "Ensure that the `standardFontDataUrl` API parameter is
+    // provided". Solo extraemos texto, nunca renderizamos glifos, así que
+    // los datos de fuente no hacen falta. Verificado: con y sin esta
+    // opcion se extraen exactamente los mismos caracteres.
+    //
+    // ⚠️ NO apuntar `standardFontDataUrl` a un CDN para callar el aviso:
+    // seria precisamente la peticion de red que el producto promete que
+    // no ocurre.
+    verbosity: pdfjsLib.VerbosityLevel.ERRORS,
+  };
+}
+```
+
+- [ ] **Step 2: Escribir las pruebas que fallan**
 
 Crear `web/src/pdf/fixtures.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
+import { PDFDocument } from 'pdf-lib';
+import { pdfjs, loadOptions, tieneOperadorDeImagen } from './pdfjs';
 import { makeTextPdf, makeImagePdf } from './fixtures';
+
+/** Texto de prueba que supera holgadamente el umbral de 100 caracteres. */
+const LARGO = 'palabra '.repeat(30);
+
+/** Lo que PDF.js observa en una página: es la lente que usará la Task 3. */
+async function inspeccionar(data: ArrayBuffer, pagina = 1) {
+  const doc = await pdfjs.getDocument(loadOptions(data)).promise;
+  const page = await doc.getPage(pagina);
+  const charCount = (await page.getTextContent()).items
+    .map((i) => ('str' in i ? i.str : ''))
+    .join('')
+    .trim().length;
+  const ops = await page.getOperatorList();
+  const tieneImagen = tieneOperadorDeImagen(ops.fnArray);
+  await doc.destroy();
+  return { charCount, tieneImagen };
+}
 
 describe('fixtures de PDF', () => {
   it('makeTextPdf produce un PDF válido con la cabecera %PDF', async () => {
@@ -216,43 +351,115 @@ describe('fixtures de PDF', () => {
   });
 
   it('makeTextPdf crea una página por cada elemento', async () => {
-    const buf = await makeTextPdf(['uno', 'dos', 'tres']);
-    expect(buf.byteLength).toBeGreaterThan(0);
+    // Se relee el PDF con pdf-lib para contar paginas de verdad.
+    // Afirmar solo `byteLength > 0` no comprobaria nada de lo que
+    // enuncia el nombre de la prueba.
+    const doc = await PDFDocument.load(await makeTextPdf(['uno', 'dos', 'tres']));
+    expect(doc.getPageCount()).toBe(3);
   });
 
-  it('makeImagePdf produce un PDF válido', async () => {
-    const bytes = new Uint8Array(await makeImagePdf(2));
-    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
+  it('makeImagePdf produce un PDF válido con el numero de paginas pedido', async () => {
+    const buf = await makeImagePdf(2);
+    expect(new TextDecoder().decode(new Uint8Array(buf).slice(0, 5))).toBe('%PDF-');
+    const doc = await PDFDocument.load(buf);
+    expect(doc.getPageCount()).toBe(2);
+  });
+
+  // --- Contrato semántico: es lo que consumen las Tasks 3 y 4 ---
+  //
+  // Sin estas dos pruebas, cambiar `embedPng` por `drawRectangle` o borrar
+  // el `drawText` dejaria las tres pruebas de arriba en verde y destruiria
+  // en silencio la distincion sobre la que se construye el diagnostico.
+
+  it('una página de makeTextPdf tiene texto extraíble y ninguna imagen', async () => {
+    const { charCount, tieneImagen } = await inspeccionar(await makeTextPdf([LARGO]));
+    // Holgado por encima del umbral de 100 de diagnose.ts. Con el texto en
+    // una sola linea se extraerian ~101 y el margen seria de 1 caracter.
+    expect(charCount).toBeGreaterThan(200);
+    expect(tieneImagen).toBe(false);
+  });
+
+  it('una página de makeImagePdf tiene imagen y ningún texto extraíble', async () => {
+    const { charCount, tieneImagen } = await inspeccionar(await makeImagePdf(2));
+    expect(charCount).toBe(0);
+    expect(tieneImagen).toBe(true);
   });
 });
 ```
 
-- [ ] **Step 2: Ejecutar y verificar que falla**
+- [ ] **Step 3: Ejecutar y verificar que falla**
 
 Run: `cd web && npm test -- fixtures`
 Expected: FAIL — `Failed to resolve import "./fixtures"`.
 
-- [ ] **Step 3: Implementar `web/src/pdf/fixtures.ts`**
+- [ ] **Step 4: Implementar `web/src/pdf/fixtures.ts`**
 
 ```ts
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 /**
+ * Extrae un `ArrayBuffer` propio a partir de la vista que devuelve pdf-lib.
+ *
+ * El `slice` respeta `byteOffset`/`byteLength` en vez de devolver el búfer
+ * subyacente completo, que es el error clásico aquí. El `as ArrayBuffer` es
+ * necesario porque la librería moderna de TypeScript tipa `.buffer` como
+ * `ArrayBufferLike`; es correcto porque pdf-lib siempre asigna un
+ * `ArrayBuffer` común, nunca un `SharedArrayBuffer`.
+ */
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength
+  ) as ArrayBuffer;
+}
+
+/** Caracteres por línea. A 12pt Helvetica caben holgados en A4 con margen de 50pt. */
+const MAX_CARACTERES_POR_LINEA = 60;
+
+/** Reparte un texto en líneas que quepan en el ancho de la página. */
+function repartirEnLineas(texto: string): string[] {
+  const lineas: string[] = [];
+  let actual = '';
+  for (const palabra of texto.split(' ')) {
+    if (!palabra) continue;
+    const candidata = actual ? `${actual} ${palabra}` : palabra;
+    if (candidata.length > MAX_CARACTERES_POR_LINEA) {
+      if (actual) lineas.push(actual);
+      actual = palabra;
+    } else {
+      actual = candidata;
+    }
+  }
+  if (actual) lineas.push(actual);
+  return lineas;
+}
+
+/**
  * PDF con capa de texto real: una página por cada cadena recibida.
  * Representa el caso "PDF nativo", que se convierte sin OCR.
+ *
+ * ⚠️ El texto se reparte en varias líneas, y eso NO es cosmético.
+ * Una sola llamada a `drawText` con un texto largo escribe una única línea
+ * que se sale de la página, y PDF.js entonces extrae solo lo que cabe:
+ * **exactamente ~101 caracteres, sin importar cuánto se haya escrito**
+ * (medido: 30 repeticiones y 200 repeticiones extraen los mismos 101).
+ * Frente al umbral de 100 caracteres de `diagnose.ts` eso dejaba un margen
+ * de UN carácter, y ningún `repeat()` podía ampliarlo. Cualquier cambio de
+ * versión de PDF.js o de métricas de fuente habría volteado la prueba a
+ * rojo sin explicación aparente.
+ * Con reparto en líneas la extracción escala: 235 caracteres extraídos para
+ * ese mismo texto (240 de entrada), con margen de 135.
  */
 export async function makeTextPdf(pages: string[]): Promise<ArrayBuffer> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   for (const text of pages) {
     const page = doc.addPage([595, 842]); // A4 en puntos
-    page.drawText(text, { x: 50, y: 780, size: 12, font });
+    repartirEnLineas(text).forEach((linea, i) => {
+      page.drawText(linea, { x: 50, y: 780 - i * 16, size: 12, font });
+    });
   }
-  const bytes = await doc.save();
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength
-  ) as ArrayBuffer;
+  return toArrayBuffer(await doc.save());
 }
 
 /**
@@ -280,27 +487,39 @@ export async function makeImagePdf(pageCount: number): Promise<ArrayBuffer> {
     const page = doc.addPage([595, 842]);
     page.drawImage(png, { x: 40, y: 40, width: 515, height: 762 });
   }
-  const bytes = await doc.save();
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength
-  ) as ArrayBuffer;
+  return toArrayBuffer(await doc.save());
 }
 ```
 
-- [ ] **Step 4: Ejecutar y verificar que pasa**
+- [ ] **Step 5: Ejecutar y verificar que pasa**
 
 Run: `cd web && npm test -- fixtures`
-Expected: PASS — 3 pruebas.
+Expected: PASS — 5 pruebas.
 
-- [ ] **Step 5: Commit**
+Si falla al resolver `pdfjs-dist/legacy/build/pdf.mjs`, verificar la ruta real con
+`ls web/node_modules/pdfjs-dist/legacy/build/` y ajustar el import **únicamente en
+`pdfjs.ts`** — ese es el motivo de que ese módulo exista.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add web/src/pdf/fixtures.ts web/src/pdf/fixtures.test.ts
-git commit -m "test(web): generador de fixtures de PDF para las pruebas de diagnostico
+git add web/src/pdf/pdfjs.ts web/src/pdf/fixtures.ts web/src/pdf/fixtures.test.ts
+git commit -m "test(web): fixtures de PDF con su contrato semantico verificado
 
 Genera los PDFs de prueba en codigo en vez de comprometer binarios al
-repositorio: reproducible y sin archivos opacos versionados."
+repositorio: reproducible y sin archivos opacos versionados.
+
+Las dos ultimas pruebas protegen el contrato del que dependen las Tasks
+3 y 4: una pagina de texto tiene texto extraible y ninguna imagen; una
+pagina escaneada tiene imagen y cero texto. Sin ellas, cambiar embedPng
+por drawRectangle o borrar el drawText dejaria la suite en verde y
+destruiria en silencio la distincion sobre la que se construye el
+diagnostico.
+
+El texto se reparte en varias lineas porque una sola llamada a drawText
+se recorta al ancho de pagina: PDF.js extrae ~101 caracteres sin
+importar cuanto se escriba, lo que dejaba un margen de 1 caracter
+contra el umbral de 100."
 ```
 
 ---
@@ -312,7 +531,9 @@ repositorio: reproducible y sin archivos opacos versionados."
 - Test: `web/src/pdf/diagnose.test.ts`
 
 **Interfaces:**
-- Consumes: `makeTextPdf`, `makeImagePdf` de la Task 2.
+- Consumes: `makeTextPdf`, `makeImagePdf` y `pdfjs`/`loadOptions` de la Task 2.
+  **`pdfjs.ts` ya existe — no volver a crearlo, y no importar `pdfjs-dist`
+  directamente desde ningún otro archivo.**
 - Produces:
   ```ts
   type PageKind = 'texto' | 'escaneado' | 'vacia';
@@ -335,10 +556,52 @@ Crear `web/src/pdf/diagnose.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import { diagnosePdf } from './diagnose';
+import { diagnosePdf, resumirPaginas } from './diagnose';
+import type { PageKind, PageReport, PdfDiagnosis } from './diagnose';
 import { makeTextPdf, makeImagePdf } from './fixtures';
 
 const LARGO = 'palabra '.repeat(30); // ~240 caracteres, supera el umbral de 100
+
+/** Construye páginas sintéticas para probar la agregación sin PDFs. */
+function paginas(...kinds: PageKind[]): PageReport[] {
+  return kinds.map((kind, i) => ({
+    pageNumber: i + 1,
+    kind,
+    charCount: kind === 'texto' ? 235 : 0,
+  }));
+}
+
+describe('resumirPaginas', () => {
+  // Las siete combinaciones posibles. Tres fallaban con la regla anterior,
+  // que exigía totalidad en vez de presencia, y ninguna estaba cubierta:
+  // ese hueco de cobertura es precisamente lo que ocultaba el defecto.
+  const casos: Array<{
+    kinds: PageKind[];
+    esperado: PdfDiagnosis['overall'];
+    nota: string;
+  }> = [
+    { kinds: [], esperado: 'vacio', nota: 'documento sin páginas' },
+    { kinds: ['texto', 'texto'], esperado: 'texto', nota: 'todas con texto' },
+    { kinds: ['escaneado', 'escaneado'], esperado: 'escaneado', nota: 'todas escaneadas' },
+    { kinds: ['vacia', 'vacia'], esperado: 'vacio', nota: 'todas vacías' },
+    { kinds: ['texto', 'escaneado'], esperado: 'mixto', nota: 'texto y escaneado' },
+    { kinds: ['texto', 'vacia'], esperado: 'texto', nota: 'texto con una página en blanco' },
+    { kinds: ['escaneado', 'vacia'], esperado: 'escaneado', nota: 'escaneado con una página en blanco' },
+  ];
+
+  for (const { kinds, esperado, nota } of casos) {
+    it(`${nota} → ${esperado}`, () => {
+      expect(resumirPaginas(paginas(...kinds))).toBe(esperado);
+    });
+  }
+
+  it('una tesis casi enteramente escaneada NO se reporta como vacía', () => {
+    // Regresión del defecto más grave: 199 páginas escaneadas más una
+    // portada vectorial daban `vacio`, es decir «tu documento está vacío».
+    const kinds: PageKind[] = [...Array(199).fill('escaneado' as PageKind), 'vacia'];
+    expect(resumirPaginas(paginas(...kinds))).toBe('escaneado');
+  });
+});
 
 describe('diagnosePdf', () => {
   it('clasifica como texto un PDF con capa de texto', async () => {
@@ -381,7 +644,7 @@ Expected: FAIL — `Failed to resolve import "./diagnose"`.
 - [ ] **Step 3: Implementar `web/src/pdf/diagnose.ts`**
 
 ```ts
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { pdfjs, loadOptions, tieneOperadorDeImagen } from './pdfjs';
 
 /** Umbral de caracteres a partir del cual una página se considera texto real. */
 const UMBRAL_TEXTO = 100;
@@ -403,63 +666,106 @@ export interface PdfDiagnosis {
 }
 
 /**
+ * Resume las páginas en un veredicto de documento.
+ *
+ * Decide por **presencia**, no por totalidad. La versión anterior exigía que
+ * *todas* las páginas fueran de un tipo, y entonces una sola página `vacia`
+ * corrompía el veredicto en ambas direcciones:
+ *
+ * - Una tesis de 199 páginas escaneadas con una portada vectorial daba
+ *   `vacio`: **«tu documento está vacío»**. Es exactamente el fallo que
+ *   `pdfjs.ts` explica que el diseño existe para evitar — el nivel de página
+ *   respetaba ese criterio y el nivel de documento lo tiraba a la basura.
+ * - Un documento enteramente convertible con un verso en blanco daba
+ *   `mixto`, ofreciendo un OCR de pago que no hacía ninguna falta.
+ *
+ * Las páginas en blanco son comunes en una tesis —separadores de capítulo,
+ * versos vacíos, portadillas—, así que no era un caso exótico.
+ *
+ * Es una función pura sobre `PageReport[]` para poder probar las siete
+ * combinaciones sin construir un PDF distinto por cada una.
+ */
+export function resumirPaginas(
+  pages: readonly PageReport[]
+): PdfDiagnosis['overall'] {
+  const conTexto = pages.some((p) => p.kind === 'texto');
+  const escaneadas = pages.some((p) => p.kind === 'escaneado');
+
+  if (conTexto && escaneadas) return 'mixto';
+  if (conTexto) return 'texto';
+  if (escaneadas) return 'escaneado';
+  return 'vacio'; // cero páginas, o todas vacías
+}
+
+/**
  * Analiza un PDF enteramente en memoria. No realiza ninguna petición de red:
  * es el fundamento verificable de la promesa de privacidad (spec §3).
  */
 export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
-  const doc = await pdfjs.getDocument({
-    data: new Uint8Array(data),
-    // Sin red: desactiva la descarga de fuentes y mapas de caracteres remotos.
-    disableFontFace: true,
-    isEvalSupported: false,
-  }).promise;
+  // Se retiene la TAREA de carga, no solo su promesa. Si `getDocument`
+  // rechaza -- PDF cifrado, cabecera corrupta, fallo del worker -- la
+  // promesa rechaza pero el worker dedicado y la copia completa del
+  // archivo del usuario siguen vivos: PDF.js solo los libera con
+  // `task.destroy()`, nunca por el rechazo de la promesa.
+  //
+  // No es hipotetico: la lista de verificacion final de este plan incluye
+  // probar un PDF protegido con contrasena, y `main.ts` ya tiene copy para
+  // ese caso. Ademas, desde que `loadOptions` copia el buffer, lo que se
+  // filtraria es un duplicado COMPLETO del archivo, no una vista.
+  //
+  // `task.destroy()` tambien libera el documento, asi que sustituye a
+  // `doc.destroy()` y cubre los dos caminos con un solo `finally`.
+  const task = pdfjs.getDocument(loadOptions(data));
 
+  let pageCount = 0;
   const pages: PageReport[] = [];
 
-  for (let n = 1; n <= doc.numPages; n++) {
-    const page = await doc.getPage(n);
-    const content = await page.getTextContent();
-    const charCount = content.items
-      .map((i) => ('str' in i ? i.str : ''))
-      .join('')
-      .trim().length;
+  // `finally`, no una llamada al final del cuerpo. Si `getPage`,
+  // `getTextContent` o `getOperatorList` rechazan —PDF corrupto, que es
+  // justo lo que esta herramienta existe para triar— el documento quedaría
+  // sin destruir, reteniendo el transporte del worker y la copia completa
+  // del archivo del usuario. En un producto cuyo argumento es que el archivo
+  // no va a ninguna parte, conservarlo en memoria de más es inaceptable.
+  try {
+    const doc = await task.promise;
+    pageCount = doc.numPages;
 
-    let kind: PageKind;
-    if (charCount >= UMBRAL_TEXTO) {
-      kind = 'texto';
-    } else {
-      // Solo operaciones de imagen auténticas. Deliberadamente NO se incluye
-      // `OPS.fill`: un relleno es una forma dibujada, no un escaneo, y
-      // aceptarlo clasificaría como escaneada cualquier página con un borde.
-      const ops = await page.getOperatorList();
-      const hasImage = ops.fnArray.some(
-        (fn: number) =>
-          fn === pdfjs.OPS.paintImageXObject ||
-          fn === pdfjs.OPS.paintInlineImageXObject ||
-          fn === pdfjs.OPS.paintJpegXObject
-      );
-      kind = hasImage ? 'escaneado' : 'vacia';
+    for (let n = 1; n <= pageCount; n++) {
+      const page = await doc.getPage(n);
+      const content = await page.getTextContent();
+      const charCount = content.items
+        .map((i) => ('str' in i ? i.str : ''))
+        // Se une sin separador a propósito: el espacio entre items que PDF.js
+        // representa por posición y no por carácter no debe inflar la cuenta.
+        // Es un subconteo leve y deliberadamente conservador. No cambiar a
+        // `join(' ')` sin recalibrar UMBRAL_TEXTO.
+        .join('')
+        .trim().length;
+
+      let kind: PageKind;
+      if (charCount >= UMBRAL_TEXTO) {
+        kind = 'texto';
+      } else {
+        // Solo operaciones de imagen auténticas. Deliberadamente NO cuenta
+        // `OPS.fill`: un relleno es una forma dibujada, no un escaneo, y
+        // aceptarlo clasificaría como escaneada cualquier página con un borde.
+        // El conjunto de opcodes vive en `pdfjs.ts` y se deriva por nombre;
+        // ver allí por qué no se enumeran a mano.
+        const ops = await page.getOperatorList();
+        kind = tieneOperadorDeImagen(ops.fnArray) ? 'escaneado' : 'vacia';
+      }
+
+      pages.push({ pageNumber: n, kind, charCount });
     }
-
-    pages.push({ pageNumber: n, kind, charCount });
+  } finally {
+    await task.destroy();
   }
 
-  await doc.destroy();
-
-  const conTexto = pages.filter((p) => p.kind === 'texto').length;
-  const escaneadas = pages.filter((p) => p.kind === 'escaneado').length;
-
-  let overall: PdfDiagnosis['overall'];
-  if (conTexto === pages.length && conTexto > 0) overall = 'texto';
-  else if (escaneadas === pages.length && escaneadas > 0) overall = 'escaneado';
-  else if (conTexto > 0) overall = 'mixto';
-  else overall = 'vacio';
-
   return {
-    pageCount: doc.numPages,
+    pageCount,
     pages,
-    overall,
-    convertibleInBrowser: conTexto > 0,
+    overall: resumirPaginas(pages),
+    convertibleInBrowser: pages.some((p) => p.kind === 'texto'),
   };
 }
 ```
@@ -467,11 +773,11 @@ export async function diagnosePdf(data: ArrayBuffer): Promise<PdfDiagnosis> {
 - [ ] **Step 4: Ejecutar y verificar que pasa**
 
 Run: `cd web && npm test -- diagnose`
-Expected: PASS — 5 pruebas.
+Expected: PASS — 13 pruebas (8 de `resumirPaginas` + 5 de `diagnosePdf`).
 
 Si falla al resolver `pdfjs-dist/legacy/build/pdf.mjs`, verificar la ruta real con
-`ls web/node_modules/pdfjs-dist/legacy/build/` y ajustar el import. La variante
-`legacy` es la que funciona en el entorno Node de Vitest.
+`ls web/node_modules/pdfjs-dist/legacy/build/` y ajustar el import **únicamente en
+`pdfjs.ts`** — ese es el motivo de que ese módulo exista.
 
 - [ ] **Step 5: Commit**
 
@@ -500,7 +806,8 @@ incluso en escaneos con OCR parcial. No hace ninguna peticion de red."
     markdown: string;
     sourceHash: string;
     pagesConverted: number;
-    pagesSkipped: number[];
+    pagesScanned: number[];
+    pagesBlank: number[];
   }
   pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult>
   ```
@@ -535,13 +842,32 @@ describe('pdfToMarkdown', () => {
   it('informa cuantas paginas convirtio', async () => {
     const r = await pdfToMarkdown(await makeTextPdf([LARGO, LARGO, LARGO]));
     expect(r.pagesConverted).toBe(3);
-    expect(r.pagesSkipped).toEqual([]);
+    expect(r.pagesScanned).toEqual([]);
+    expect(r.pagesBlank).toEqual([]);
   });
 
-  it('omite las paginas escaneadas y las reporta', async () => {
+  it('omite las paginas escaneadas y las reporta como facturables', async () => {
     const r = await pdfToMarkdown(await makeImagePdf(2));
     expect(r.pagesConverted).toBe(0);
-    expect(r.pagesSkipped).toEqual([1, 2]);
+    expect(r.pagesScanned).toEqual([1, 2]);
+    // Escaneadas, no en blanco: son cosas distintas y solo las primeras
+    // requieren OCR de pago.
+    expect(r.pagesBlank).toEqual([]);
+  });
+
+  it('una pagina en blanco va a pagesBlank, no a pagesScanned', async () => {
+    // La segunda pagina tiene 2 caracteres: por debajo del umbral y sin
+    // imagen, asi que `diagnosePdf` la clasifica `vacia`.
+    //
+    // Esta prueba existe porque las demas solo afirman `pagesBlank: []`, y
+    // una asercion de arreglo vacio sigue verde aunque la rama este muerta
+    // o empuje al arreglo equivocado. Es la misma forma de prueba que no
+    // puede fallar que ocultaba el bug del hash sobre buffer detached.
+    // Invierte la condicion en toMarkdown.ts y esta prueba debe ponerse roja.
+    const r = await pdfToMarkdown(await makeTextPdf([LARGO, 'hi']));
+    expect(r.pagesConverted).toBe(1);
+    expect(r.pagesScanned).toEqual([]);
+    expect(r.pagesBlank).toEqual([2]);
   });
 
   it('el sourceHash coincide con el sha256 del archivo de entrada', async () => {
@@ -560,7 +886,9 @@ Expected: FAIL — `Failed to resolve import "./toMarkdown"`.
 - [ ] **Step 3: Implementar `web/src/pdf/toMarkdown.ts`**
 
 ```ts
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+// `tieneOperadorDeImagen` NO se importa aqui: `diagnosePdf` ya clasifico
+// las paginas. Importarlo sin usarlo es error TS6133 con noUnusedLocals.
+import { pdfjs, loadOptions } from './pdfjs';
 import { diagnosePdf } from './diagnose';
 import { sha256Hex } from '../lib/hash';
 
@@ -569,8 +897,21 @@ export interface ConversionResult {
   /** SHA-256 del PDF de origen. El archivo no sale del navegador. */
   sourceHash: string;
   pagesConverted: number;
-  /** Números de página omitidas por no tener texto extraíble. */
-  pagesSkipped: number[];
+  /**
+   * Páginas escaneadas: tienen contenido, pero requiere OCR en servidor.
+   * Son las facturables, y las unicas que deben mostrarse como pendientes.
+   */
+  pagesScanned: number[];
+  /**
+   * Páginas sin texto y sin imagen. No hay nada que convertir ni que cobrar.
+   *
+   * Se separan de `pagesScanned` a proposito. Un unico campo `pagesSkipped`
+   * mezclaba ambas, perdiendo una distincion que `diagnosePdf` ya habia
+   * calculado -- e invitando a cobrar OCR por los separadores de capitulo y
+   * versos en blanco que abundan en una tesis. Es el mismo descuido que
+   * corrompia el veredicto del documento antes de `resumirPaginas`.
+   */
+  pagesBlank: number[];
 }
 
 /**
@@ -582,37 +923,53 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
   const diagnosis = await diagnosePdf(data);
   const sourceHash = await sha256Hex(data);
 
-  const doc = await pdfjs.getDocument({
-    data: new Uint8Array(data),
-    disableFontFace: true,
-    isEvalSupported: false,
-  }).promise;
+  // Se retiene la TAREA de carga, no solo su promesa. Si `getDocument`
+  // rechaza -- PDF cifrado, cabecera corrupta, fallo del worker -- la
+  // promesa rechaza pero el worker dedicado y la copia completa del
+  // archivo del usuario siguen vivos: PDF.js solo los libera con
+  // `task.destroy()`, nunca por el rechazo de la promesa.
+  //
+  // No es hipotetico: la lista de verificacion final de este plan incluye
+  // probar un PDF protegido con contrasena, y `main.ts` ya tiene copy para
+  // ese caso. Ademas, desde que `loadOptions` copia el buffer, lo que se
+  // filtraria es un duplicado COMPLETO del archivo, no una vista.
+  //
+  // `task.destroy()` tambien libera el documento, asi que sustituye a
+  // `doc.destroy()` y cubre los dos caminos con un solo `finally`.
+  const task = pdfjs.getDocument(loadOptions(data));
 
   const bloques: string[] = [];
-  const pagesSkipped: number[] = [];
+  const pagesScanned: number[] = [];
+  const pagesBlank: number[] = [];
 
-  for (const reporte of diagnosis.pages) {
-    if (reporte.kind !== 'texto') {
-      pagesSkipped.push(reporte.pageNumber);
-      continue;
+  try {
+    const doc = await task.promise;
+
+    for (const reporte of diagnosis.pages) {
+      if (reporte.kind !== 'texto') {
+        if (reporte.kind === 'escaneado') pagesScanned.push(reporte.pageNumber);
+        else pagesBlank.push(reporte.pageNumber);
+        continue;
+      }
+      const page = await doc.getPage(reporte.pageNumber);
+      const content = await page.getTextContent();
+      const texto = content.items
+        .map((i) => ('str' in i ? i.str : ''))
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      bloques.push(`## Página ${reporte.pageNumber}\n\n${texto}`);
     }
-    const page = await doc.getPage(reporte.pageNumber);
-    const content = await page.getTextContent();
-    const texto = content.items
-      .map((i) => ('str' in i ? i.str : ''))
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    bloques.push(`## Página ${reporte.pageNumber}\n\n${texto}`);
+  } finally {
+    await task.destroy();
   }
-
-  await doc.destroy();
 
   return {
     markdown: bloques.join('\n\n'),
     sourceHash,
     pagesConverted: bloques.length,
-    pagesSkipped,
+    pagesScanned,
+    pagesBlank,
   };
 }
 ```
@@ -620,12 +977,37 @@ export async function pdfToMarkdown(data: ArrayBuffer): Promise<ConversionResult
 - [ ] **Step 4: Ejecutar y verificar que pasa**
 
 Run: `cd web && npm test -- toMarkdown`
-Expected: PASS — 5 pruebas.
+Expected: PASS — 7 pruebas.
 
 - [ ] **Step 5: Ejecutar la suite completa**
 
 Run: `cd web && npm test`
-Expected: PASS — 17 pruebas en total (4 hash + 3 fixtures + 5 diagnose + 5 toMarkdown).
+Expected: PASS — 33 pruebas en total (4 hash + 5 fixtures + 14 diagnose + 8 toMarkdown + 2 destroyTask).
+
+> ### Decisión de arquitectura de pruebas: `web/src/pdf/destroyTask.test.ts`
+>
+> Este archivo es el **único** de la base que usa `vi.mock`. Todos los demás son de
+> integración, con fixtures reales. La excepción está justificada y medida:
+>
+> La fuga de la tarea de carga **no cambia ningún comportamiento observable**. El error se
+> propaga idéntico; lo único que queda es un worker vivo reteniendo una copia completa del
+> archivo del usuario. Se añadieron primero las pruebas obvias —`rejects.toThrow()` sobre
+> ambas funciones— y luego se revirtió la corrección: **las 31 siguieron en verde**. Contra
+> este defecto, una prueba de rechazo es otra prueba que no puede fallar.
+>
+> La regla de evitar mocks existe porque mockear lo que se está probando lleva a probar el
+> mock. No aplica aquí: la limpieza de recursos no devuelve valor ni cambia estado visible,
+> así que instrumentarla no sustituye la lógica bajo prueba — es la única forma de observarla.
+> `vi.spyOn(pdfjs, 'getDocument')` tampoco sirve: falla con *Module namespace is not
+> configurable in ESM* (verificado, no supuesto).
+>
+> Lo que afirma es el invariante real: **toda tarea creada se destruye**, en ambos caminos.
+> Verificado por el controlador: bajo la mutación a la forma con fuga, **solo falla este
+> archivo** (`expected +0 to be 1`) mientras las otras 32 pasan. Sin él, la corrección queda
+> verificada pero no protegida, y la regresión vuelve invisible con la suite entera en verde.
+>
+> Las pruebas de rechazo se conservaron —cubren un camino antes inexplorado y su timeout sí
+> demuestra que no hay cuelgue—, pero sus docblocks dicen con claridad lo que **no** prueban.
 
 - [ ] **Step 6: Commit**
 
@@ -633,8 +1015,10 @@ Expected: PASS — 17 pruebas en total (4 hash + 3 fixtures + 5 diagnose + 5 toM
 git add web/src/pdf/toMarkdown.ts web/src/pdf/toMarkdown.test.ts
 git commit -m "feat(web): conversion de PDF a Markdown en el navegador
 
-Omite las paginas sin capa de texto y las reporta en pagesSkipped: esas
-requieren OCR en servidor, que es el servicio de pago. Calcula el
+Omite las paginas sin capa de texto, separando las escaneadas (requieren
+OCR de pago) de las que estan en blanco (no hay nada que hacer ni que
+cobrar). Un unico campo pagesSkipped mezclaba ambas y perdia una
+distincion que diagnosePdf ya habia calculado. Calcula el
 sha256 del origen aunque el archivo nunca salga del navegador, para que
 el usuario pueda identificar inequivocamente que convirtio."
 ```
@@ -650,8 +1034,11 @@ el usuario pueda identificar inequivocamente que convirtio."
 - Test: `web/src/ui/report.test.ts`
 
 **Interfaces:**
-- Consumes: `diagnosePdf`, `PdfDiagnosis` (Task 3); `pdfToMarkdown` (Task 4).
+- Consumes: `configureWorker`, `diagnosePdf`, `PdfDiagnosis` (Task 3); `pdfToMarkdown` (Task 4).
 - Produces: `renderDiagnosis(d: PdfDiagnosis): string` — devuelve HTML. Se separa de `main.ts` para poder probarla sin DOM.
+
+⚠️ **`main.ts` nunca importa `pdfjs-dist` directamente.** Accede a PDF.js solo a
+través de `./pdf/pdfjs` (Task 3). Ver la nota de esa tarea.
 
 **Copy obligatorio (spec §2.4):** cuando `convertibleInBrowser` es `false`, la interfaz nunca dice "no se puede". Ofrece el OCR de pago y el correo de contacto.
 
@@ -731,10 +1118,19 @@ const CONTACTO = 'first.contact.desk@aideatext.ai';
  */
 export function renderDiagnosis(d: PdfDiagnosis): string {
   const escaneadas = d.pages.filter((p) => p.kind === 'escaneado').length;
+  // Se CUENTAN las de texto, no se restan las escaneadas. `pageCount -
+  // escaneadas` metia las paginas en blanco en el saco de "con texto", y
+  // `resumirPaginas` permite blancos tanto en `texto` como en `mixto` por
+  // diseno: los separadores de capitulo y versos vacios son normales en
+  // una tesis. Es la misma confusion de pagesBlank, ahora en la interfaz.
+  const conTexto = d.pages.filter((p) => p.kind === 'texto').length;
+  const enBlanco = d.pages.filter((p) => p.kind === 'vacia').length;
 
   if (d.convertibleInBrowser && d.overall === 'texto') {
     return `
-      <p><strong>${d.pageCount}</strong> páginas, todas con texto extraíble.</p>
+      <p><strong>${d.pageCount}</strong> páginas: ${conTexto} con texto extraíble${
+        enBlanco > 0 ? `, ${enBlanco} en blanco` : ''
+      }.</p>
       <p>Se convierte aquí mismo, sin subir nada.</p>
       <button id="descargar">Descargar Markdown</button>`;
   }
@@ -742,7 +1138,9 @@ export function renderDiagnosis(d: PdfDiagnosis): string {
   if (d.overall === 'mixto') {
     return `
       <p><strong>${d.pageCount}</strong> páginas: documento <strong>mixto</strong>.</p>
-      <p>${d.pageCount - escaneadas} con texto, ${escaneadas} escaneadas.</p>
+      <p>${conTexto} con texto, ${escaneadas} escaneadas${
+        enBlanco > 0 ? `, ${enBlanco} en blanco` : ''
+      }.</p>
       <p>Convertimos ahora las que tienen texto. Para las escaneadas hace
          falta OCR en servidor.</p>
       <button id="descargar">Descargar Markdown</button>
@@ -750,13 +1148,29 @@ export function renderDiagnosis(d: PdfDiagnosis): string {
          <a href="mailto:${CONTACTO}">${CONTACTO}</a></p>`;
   }
 
+  if (d.overall === 'escaneado') {
+    return `
+      <p><strong>${d.pageCount}</strong> páginas escaneadas, sin capa de texto.</p>
+      <p>Este documento necesita OCR, que se procesa en servidor.
+         Puedes probar <strong>una página gratis</strong> antes de decidir:
+         elige la peor escaneada, para ver la calidad en el caso más difícil.</p>
+      <p>Escríbenos a <a href="mailto:${CONTACTO}">${CONTACTO}</a>
+         y evaluamos tu caso.</p>`;
+  }
+
+  // `vacio` tiene su propio mensaje y NO ofrece OCR de pago.
+  //
+  // Un documento sin texto Y sin imagenes no tiene nada que reconocer: el
+  // OCR no le serviria de nada y cobrarselo seria vender humo. Fundir esta
+  // rama con `escaneado` reintroducia en la interfaz justo la confusion que
+  // la Task 4 pago una ronda por separar en los datos (`pagesScanned` vs
+  // `pagesBlank`). Un arreglo en la capa de datos no sirve si la capa de
+  // presentacion vuelve a mezclarlo.
   return `
-    <p><strong>${d.pageCount}</strong> páginas escaneadas, sin capa de texto.</p>
-    <p>Este documento necesita OCR, que se procesa en servidor.
-       Puedes probar <strong>una página gratis</strong> antes de decidir:
-       elige la peor escaneada, para ver la calidad en el caso más difícil.</p>
+    <p><strong>${d.pageCount}</strong> páginas, sin texto ni imágenes.</p>
+    <p>Puede que el archivo esté dañado, protegido, o realmente vacío.</p>
     <p>Escríbenos a <a href="mailto:${CONTACTO}">${CONTACTO}</a>
-       y evaluamos tu caso.</p>`;
+       y lo revisamos contigo.</p>`;
 }
 ```
 
@@ -811,15 +1225,20 @@ Expected: PASS — 5 pruebas.
 - [ ] **Step 6: Crear `web/src/main.ts`**
 
 ```ts
-import * as pdfjs from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+import { configureWorker } from './pdf/pdfjs';
 import { diagnosePdf } from './pdf/diagnose';
 import { pdfToMarkdown } from './pdf/toMarkdown';
 import { renderDiagnosis } from './ui/report';
 
 // El worker se sirve desde nuestro propio dominio, no desde un CDN:
 // una peticion externa contradiria la garantia de "nada sale de aqui".
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+//
+// Se configura a traves de ./pdf/pdfjs, que es la unica instancia de
+// PDF.js del proyecto. Importar 'pdfjs-dist' aqui directamente crearia
+// una segunda instancia y esta configuracion no tendria efecto.
+// El worker debe venir de la variante `legacy`, la misma que usa pdfjs.ts.
+configureWorker(workerUrl);
 
 const zona = document.getElementById('zona') as HTMLDivElement;
 const input = document.getElementById('archivo') as HTMLInputElement;
@@ -843,6 +1262,13 @@ zona.addEventListener('drop', (e) => {
 
 input.addEventListener('change', () => {
   const file = input.files?.[0];
+  // Se limpia el valor SIEMPRE, antes de procesar. Un input de archivo no
+  // dispara `change` si el usuario vuelve a elegir el mismo archivo, asi
+  // que sin esto el reintento tras un error no hace absolutamente nada:
+  // el usuario hace clic, elige su tesis otra vez, y la pantalla no
+  // cambia. Es el mismo callejon silencioso del boton mudo, entrando por
+  // otra puerta -- y justo en el camino de salida del error.
+  input.value = '';
   if (file) void procesar(file);
 });
 
@@ -856,8 +1282,27 @@ async function procesar(file: File): Promise<void> {
     const boton = document.getElementById('descargar');
     if (boton) {
       boton.addEventListener('click', async () => {
-        const r = await pdfToMarkdown(data);
-        descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
+        // `catch` PROPIO, no el del `try` de abajo: el rechazo de un
+        // callback asincrono no se propaga al try que lo registro.
+        //
+        // Sin esto, si `pdfToMarkdown` falla el usuario hace clic y NO
+        // OCURRE NADA: ni archivo, ni mensaje, ni cambio en pantalla. Es
+        // el callejon sin salida mas silencioso posible, justo lo que la
+        // regla de «nunca decir no se puede» existe para evitar.
+        //
+        // Y no es hipotetico: `sha256Hex` usa `crypto.subtle`, que no
+        // existe fuera de un contexto seguro. Servir con `vite --host`
+        // sobre una IP de red local deja el boton mudo.
+        try {
+          const r = await pdfToMarkdown(data);
+          descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
+        } catch {
+          salida.innerHTML = `
+            <p>Algo falló al convertir este documento.</p>
+            <p>Escríbenos a
+               <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+               y lo revisamos contigo.</p>`;
+        }
       });
     }
   } catch {
@@ -870,13 +1315,29 @@ async function procesar(file: File): Promise<void> {
   }
 }
 
+/** Milisegundos antes de liberar la URL del blob. Ver la nota de abajo. */
+const MS_ANTES_DE_LIBERAR = 60_000;
+
 function descargar(texto: string, nombre: string): void {
   const url = URL.createObjectURL(new Blob([texto], { type: 'text/markdown' }));
   const a = document.createElement('a');
   a.href = url;
   a.download = nombre;
   a.click();
-  URL.revokeObjectURL(url);
+
+  // Se libera con retraso, NO justo despues de `click()`.
+  //
+  // `a.click()` solo *inicia* la descarga; el navegador lee el blob de
+  // forma asincrona. Revocar de inmediato es una carrera: en algunos
+  // navegadores el archivo llega vacio o la descarga se cancela, y el
+  // usuario se queda sin su Markdown sin ningun mensaje de error.
+  //
+  // No se verifica, se elimina. Un navegador headless no puede distinguir
+  // esta carrera -- se comprobo que un control que NUNCA revoca cancela
+  // igual --, asi que confirmarla exigiria una prueba manual en cada
+  // navegador. Sesenta segundos de una URL de blob viva no cuestan nada;
+  // una descarga silenciosamente vacia cuesta el usuario.
+  setTimeout(() => URL.revokeObjectURL(url), MS_ANTES_DE_LIBERAR);
 }
 ```
 
@@ -962,7 +1423,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Node 24, no 20: vitest@5 exige ^22.12.0 || ^24.0.0 || >=26.0.0.
+          # Con Node 20 este workflow fallaria en `npm test` pero pasaria el
+          # build, porque vite@6 si acepta Node 20 -- un fallo desconcertante.
+          node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
 
@@ -1040,7 +1504,7 @@ git push
 
 Al terminar las seis tareas, comprobar:
 
-- [ ] `cd web && npm test` — 22 pruebas en verde
+- [ ] `cd web && npm test` — 38 pruebas en verde
 - [ ] `cd web && npm run build` — sin errores de TypeScript
 - [ ] https://desk.aideatext.ai carga
 - [ ] Un PDF de texto se convierte y descarga correctamente

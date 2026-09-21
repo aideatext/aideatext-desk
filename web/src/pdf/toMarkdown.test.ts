@@ -1,0 +1,85 @@
+import { describe, it, expect } from 'vitest';
+import { pdfToMarkdown } from './toMarkdown';
+import { makeTextPdf, makeImagePdf } from './fixtures';
+import { sha256Hex } from '../lib/hash';
+
+const LARGO = 'investigacion cualitativa '.repeat(10); // ~260 caracteres
+
+describe('pdfToMarkdown', () => {
+  it('extrae el texto de la pagina al markdown', async () => {
+    const r = await pdfToMarkdown(await makeTextPdf([LARGO]));
+    expect(r.markdown).toContain('investigacion cualitativa');
+  });
+
+  it('inserta un separador por pagina', async () => {
+    const r = await pdfToMarkdown(await makeTextPdf([LARGO, LARGO]));
+    expect(r.markdown).toContain('## Página 1');
+    expect(r.markdown).toContain('## Página 2');
+  });
+
+  it('informa cuantas paginas convirtio', async () => {
+    const r = await pdfToMarkdown(await makeTextPdf([LARGO, LARGO, LARGO]));
+    expect(r.pagesConverted).toBe(3);
+    expect(r.pagesScanned).toEqual([]);
+    expect(r.pagesBlank).toEqual([]);
+  });
+
+  it('omite las paginas escaneadas y las reporta como facturables', async () => {
+    const r = await pdfToMarkdown(await makeImagePdf(2));
+    expect(r.pagesConverted).toBe(0);
+    expect(r.pagesScanned).toEqual([1, 2]);
+    // Escaneadas, no en blanco: son cosas distintas y solo las primeras
+    // requieren OCR de pago.
+    expect(r.pagesBlank).toEqual([]);
+  });
+
+  it('una pagina en blanco va a pagesBlank, no a pagesScanned', async () => {
+    // La segunda pagina tiene 2 caracteres: por debajo del umbral y sin
+    // imagen, asi que `diagnosePdf` la clasifica `vacia`.
+    //
+    // Esta prueba existe porque las demas solo afirman `pagesBlank: []`, y
+    // una asercion de arreglo vacio sigue verde aunque la rama este muerta
+    // o empuje al arreglo equivocado. Es la misma forma de prueba que no
+    // puede fallar que ocultaba el bug del hash sobre buffer detached.
+    // Invierte la condicion en toMarkdown.ts y esta prueba debe ponerse roja.
+    const r = await pdfToMarkdown(await makeTextPdf([LARGO, 'hi']));
+    expect(r.pagesConverted).toBe(1);
+    expect(r.pagesScanned).toEqual([]);
+    expect(r.pagesBlank).toEqual([2]);
+  });
+
+  it('el sourceHash coincide con el sha256 del archivo de entrada', async () => {
+    const pdf = await makeTextPdf([LARGO]);
+    const r = await pdfToMarkdown(pdf);
+    expect(r.sourceHash).toBe(await sha256Hex(pdf));
+  });
+
+  /**
+   * Contraparte de la prueba equivalente en `diagnose.test.ts`. Aqui el
+   * rechazo llega desde `diagnosePdf`, a quien `pdfToMarkdown` llama primero:
+   * lo que se comprueba es que no se lo traga ni devuelve un resultado vacio
+   * fingiendo que la conversion fue bien.
+   */
+  it('propaga el error de un PDF ilegible en vez de devolver vacio', async () => {
+    const basura = new TextEncoder().encode('esto no es un PDF').buffer as ArrayBuffer;
+    await expect(pdfToMarkdown(basura)).rejects.toThrow(/Invalid PDF/i);
+  });
+
+  /**
+   * Regresión: `loadOptions` pasaba a PDF.js una VISTA del búfer del llamante,
+   * que el worker transfería, dejándolo detached. Esta prueba calcula el hash
+   * esperado ANTES de convertir a propósito: la prueba anterior lo calcula
+   * después, y sobre un búfer detached ambos lados dan el SHA-256 del vacío,
+   * con lo que pasaría en verde describiendo un producto roto.
+   */
+  it('no consume el ArrayBuffer de entrada', async () => {
+    const pdf = await makeTextPdf([LARGO]);
+    const esperado = await sha256Hex(pdf);
+    const bytes = pdf.byteLength;
+
+    const r = await pdfToMarkdown(pdf);
+
+    expect(pdf.byteLength).toBe(bytes);
+    expect(r.sourceHash).toBe(esperado);
+  });
+});
