@@ -979,7 +979,32 @@ Expected: PASS — 7 pruebas.
 - [ ] **Step 5: Ejecutar la suite completa**
 
 Run: `cd web && npm test`
-Expected: PASS — 29 pruebas en total (4 hash + 5 fixtures + 13 diagnose + 7 toMarkdown).
+Expected: PASS — 33 pruebas en total (4 hash + 5 fixtures + 14 diagnose + 8 toMarkdown + 2 destroyTask).
+
+> ### Decisión de arquitectura de pruebas: `web/src/pdf/destroyTask.test.ts`
+>
+> Este archivo es el **único** de la base que usa `vi.mock`. Todos los demás son de
+> integración, con fixtures reales. La excepción está justificada y medida:
+>
+> La fuga de la tarea de carga **no cambia ningún comportamiento observable**. El error se
+> propaga idéntico; lo único que queda es un worker vivo reteniendo una copia completa del
+> archivo del usuario. Se añadieron primero las pruebas obvias —`rejects.toThrow()` sobre
+> ambas funciones— y luego se revirtió la corrección: **las 31 siguieron en verde**. Contra
+> este defecto, una prueba de rechazo es otra prueba que no puede fallar.
+>
+> La regla de evitar mocks existe porque mockear lo que se está probando lleva a probar el
+> mock. No aplica aquí: la limpieza de recursos no devuelve valor ni cambia estado visible,
+> así que instrumentarla no sustituye la lógica bajo prueba — es la única forma de observarla.
+> `vi.spyOn(pdfjs, 'getDocument')` tampoco sirve: falla con *Module namespace is not
+> configurable in ESM* (verificado, no supuesto).
+>
+> Lo que afirma es el invariante real: **toda tarea creada se destruye**, en ambos caminos.
+> Verificado por el controlador: bajo la mutación a la forma con fuga, **solo falla este
+> archivo** (`expected +0 to be 1`) mientras las otras 32 pasan. Sin él, la corrección queda
+> verificada pero no protegida, y la regresión vuelve invisible con la suite entera en verde.
+>
+> Las pruebas de rechazo se conservaron —cubren un camino antes inexplorado y su timeout sí
+> demuestra que no hay cuelgue—, pero sus docblocks dicen con claridad lo que **no** prueban.
 
 - [ ] **Step 6: Commit**
 
@@ -1407,7 +1432,7 @@ git push
 
 Al terminar las seis tareas, comprobar:
 
-- [ ] `cd web && npm test` — 34 pruebas en verde
+- [ ] `cd web && npm test` — 38 pruebas en verde
 - [ ] `cd web && npm run build` — sin errores de TypeScript
 - [ ] https://desk.aideatext.ai carga
 - [ ] Un PDF de texto se convierte y descarga correctamente
