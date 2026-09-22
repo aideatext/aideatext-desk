@@ -26,7 +26,7 @@ const twitter = (nombre: string): string | null =>
 describe('metadatos sociales', () => {
   it('declara Open Graph, que es lo que leen WhatsApp, Facebook e Instagram', () => {
     expect(og('type')).toBe('website');
-    expect(og('url')).toBe('https://desk.aideatext.ai/');
+    expect(og('url')).toBe('https://aidesk.aideatext.ai/');
     expect(og('title')).toBeTruthy();
     expect(og('description')).toBeTruthy();
   });
@@ -36,13 +36,13 @@ describe('metadatos sociales', () => {
   // enlace compartido -- y en Mexico y Peru ese enlace viaja sobre todo por
   // WhatsApp.
   it('la imagen de Open Graph es una URL absoluta', () => {
-    expect(og('image')).toBe('https://desk.aideatext.ai/img/AIdeaTextCard.jpg');
+    expect(og('image')).toBe('https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg');
   });
 
   it('declara tambien la tarjeta de Twitter/X', () => {
     expect(twitter('card')).toBe('summary_large_image');
     expect(twitter('image')).toBe(
-      'https://desk.aideatext.ai/img/AIdeaTextCard.jpg'
+      'https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg'
     );
     expect(twitter('title')).toBeTruthy();
   });

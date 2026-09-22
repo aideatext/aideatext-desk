@@ -1,4 +1,4 @@
-# DESK — desk.aideatext.ai
+# AIDesk — aidesk.aideatext.ai
 
 Conversión de archivos para investigación académica, con **cero retención de datos**.
 
@@ -29,7 +29,7 @@ Ver [SECURITY.md](SECURITY.md) para el detalle del tratamiento de datos.
 
 ## Estado
 
-✅ **Web cliente desplegada** — https://desk.aideatext.ai
+✅ **Web cliente desplegada** — https://aidesk.aideatext.ai
    Diagnóstico de PDF y conversión a Markdown, enteramente en el navegador.
    Ninguna petición de subida: lo impone una CSP con `connect-src 'self'`,
    no solo el código.

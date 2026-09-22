@@ -185,8 +185,18 @@ describe('ejecutarAutocomprobacion', () => {
     }
   });
 
+  // El sitio se sirve desde DOS dominios desde el cambio de nombre:
+  // `aidesk.aideatext.ai` (el nuevo, canónico) y `desk.aideatext.ai` (el
+  // viejo, que se deja vivo para no matar los enlaces ya compartidos).
+  // Los dos son «el propio origen» para `connect-src 'self'`, así que el
+  // destino de la comprobación no puede ser ninguno: contra ellos la CSP
+  // no se activaría y el botón demostraría lo contrario de lo que dice.
   it('apunta a un origen externo: contra el propio la CSP no se activaría', () => {
-    expect(new URL(DESTINO_EXTERNO).origin).not.toBe('https://desk.aideatext.ai');
+    const propios = [
+      'https://aidesk.aideatext.ai',
+      'https://desk.aideatext.ai',
+    ];
+    expect(propios).not.toContain(new URL(DESTINO_EXTERNO).origin);
     expect(DESTINO_EXTERNO.startsWith('https://')).toBe(true);
   });
 });
