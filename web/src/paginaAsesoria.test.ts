@@ -126,9 +126,78 @@ describe('la portada enlaza a la asesoría', () => {
   const banda = () =>
     portada.match(/<section class="banda">([\s\S]*?)<\/section>/)?.[1] ?? '';
 
+  const prosaBanda = () => banda().replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+
   it('la anuncia en una franja bajo las tres columnas', () => {
     expect(banda()).toContain('/asesoriatesis/');
     expect(banda()).toMatch(/Asesoría/);
+    expect(prosaBanda()).toMatch(
+      /análisis de documentos con grafos de razonamiento semántico/
+    );
+  });
+
+  it('plantea las tres preguntas que el grafo responde', () => {
+    const p = prosaBanda();
+    expect(p).toMatch(/¿Qué razonamiento hay en tu argumentación\?/);
+    expect(p).toMatch(/¿Qué concepto pesa más frente a los otros\?/);
+    expect(p).toMatch(/¿Están todos los conceptos vinculados\?/);
+  });
+
+  // Las cuatro formas salen del guion de AIdeaText
+  // (`AIdeaText_v61/explicacion/guion.md`), que es la fuente. Si alguna se
+  // pierde al editar el copy, la respuesta a la primera pregunta deja de
+  // ser una respuesta.
+  it('nombra las cuatro formas del grafo', () => {
+    const p = prosaBanda();
+    for (const forma of ['estrella', 'embudo', 'Coronas', 'Dos lóbulos']) {
+      expect(p).toContain(forma);
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // LO QUE EL GUION PROHIBE DECIR
+  // ─────────────────────────────────────────────────────────────────
+  // `guion.md` cierra con una tabla de frases que son falsas y fáciles de
+  // escribir sin querer. Esta página vende el método, así que es justo
+  // donde aparecerían. La tabla se traduce aquí en asserts porque un
+  // documento no impide nada y una prueba sí.
+  it('no dice que detecte si el razonamiento es correcto', () => {
+    const p = prosaBanda().toLowerCase();
+    expect(p).not.toMatch(/razonamiento (es )?correcto/);
+    expect(p).not.toMatch(/si está bien razonado[^:]/);
+    // Control: la página SÍ dice lo contrario, explícitamente.
+    expect(prosaBanda()).toMatch(/No dice si está bien razonado: dice cómo está armado/);
+  });
+
+  it('no dice que califique ni evalúe', () => {
+    const p = prosaBanda().toLowerCase();
+    expect(p).not.toContain('califica');
+    expect(p).not.toContain('evalúa');
+    expect(p).not.toContain('corrige');
+  });
+
+  // El guion es tajante: el estado de UNIFE es «planificada», y AIdeaText
+  // no está en uso en ninguna universidad. Afirmarlo aquí sería falso.
+  it('no afirma que se use en ninguna universidad', () => {
+    const p = prosaBanda().toLowerCase();
+    expect(p).not.toContain('unife');
+    expect(p).not.toMatch(/lo usan? (en )?(la )?universidad/);
+  });
+
+  // «Grande no es importante: es frecuente». Es la confusión que el propio
+  // guion señala como la más fácil de cometer, y la página la desmonta en
+  // vez de esquivarla.
+  it('aclara que el tamaño es frecuencia y no importancia', () => {
+    // `\s*` antes de la coma: el énfasis va en `<strong>` y quitar la
+    // etiqueta deja un espacio donde el lector no ve ninguno.
+    expect(prosaBanda()).toMatch(/tamaño es frecuencia\s*, no importancia/);
+  });
+
+  // La confianza del detector no es una probabilidad. La página no la
+  // menciona; esta prueba impide que aparezca como porcentaje si alguien
+  // amplía el texto más adelante.
+  it('no presenta ninguna confianza como porcentaje', () => {
+    expect(prosaBanda()).not.toMatch(/\d+\s*%/);
   });
 
   // LA PRUEBA QUE IMPORTA DE LA FRANJA. El enlace de pago existe y

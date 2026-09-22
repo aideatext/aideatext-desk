@@ -103,12 +103,15 @@
       margin: 0;
       padding: 0 clamp(.7rem, 1.8vw, 1.5rem);
       display: grid;
-      /* Cuatro filas: cabecera, columnas, franja de asesoria y pie. Solo
-         la de las columnas crece. La franja se lleva el blanco que las
-         tres columnas dejaban abajo —ninguna llegaba al suelo— y de paso
-         saca la asesoria del pie, donde era un enlace que no pulsaba
-         nadie. Al acortarse el alto disponible, las tres columnas quedan
-         ademas mas parejas entre si. */
+      /* Cuatro filas: cabecera, columnas, seccion 4 y pie. Este reparto
+         —el de pantalla baja, sin seccion 4— deja crecer a las columnas.
+         Con sitio de sobra manda el de la consulta `min-height: 700px`,
+         donde la que crece es la seccion 4 y las columnas toman su alto
+         real: es lo que quita el blanco de dentro de las columnas.
+         El `minmax(0, …)` no es adorno en ninguno de los dos: su minimo
+         de 0 es lo que permite a una fila encogerse cuando el resultado
+         de una conversion se hace largo, en vez de empujar el pie fuera
+         de la pantalla. La columna se desplaza por dentro, como siempre. */
       grid-template-rows: auto minmax(0, 1fr) auto auto;
       height: 100vh;
       height: 100dvh;
@@ -170,14 +173,15 @@
        El suelo de 44px sigue dejando leer «Inception Program». */
     .logos { display: flex; align-items: center; gap: 1rem; flex: none; }
 
+    /* +30% sobre los 62px anteriores: 81px de tope, 57px de suelo. */
     .logos .aideatext {
-      width: clamp(44px, 7.6vh, 62px);
-      height: clamp(44px, 7.6vh, 62px);
+      width: clamp(57px, 9.9vh, 81px);
+      height: clamp(57px, 9.9vh, 81px);
       display: block;
     }
 
     .logos .nvidia {
-      height: clamp(44px, 7.6vh, 62px);
+      height: clamp(57px, 9.9vh, 81px);
       width: auto;
       display: block;
     }
@@ -531,22 +535,65 @@
        abajo no es el cuarto servicio de la misma lista sino otra cosa.
        El texto y el boton en fila para que la franja sea baja — se lleva
        el blanco sobrante, no lo sustituye por una caja igual de grande. */
+    /* Columna de tres partes —cabecera, las tres preguntas, el cierre— y
+       la de en medio es la que crece, para que la seccion ocupe todo el
+       alto que le da la rejilla sin dejar hueco. */
+    /* `auto auto auto` + `align-content: space-between`, NO una fila
+       `1fr` en medio. Con `1fr`, a 1440x900 las preguntas recibian una
+       caja de 78px para 100px de contenido y `align-content: center` lo
+       desbordaba por arriba: el parrafo de entrada y los titulos de las
+       preguntas se pisaban en pantalla.
+       Asi cada parte toma su alto real y el sobrante se reparte ENTRE
+       ellas, que es como se llena una seccion sin aplastar su contenido. */
     .banda {
-      display: flex;
-      align-items: center;
-      gap: .8rem 1.2rem;
-      flex-wrap: wrap;
-      margin-bottom: .4rem;
-      padding: .6rem .85rem;
+      display: grid;
+      grid-template-rows: auto auto auto;
+      align-content: space-between;
+      gap: .35rem;
+      min-height: 0;
+      margin-bottom: .35rem;
+      padding: .45rem .8rem;
       border: 1px solid #c3ddcc;
       border-radius: 10px;
       background: var(--acento-suave);
+      overflow: auto;
     }
 
-    .banda-texto { flex: 1 1 24rem; min-width: 0; }
     .banda h2 { margin: 0 0 .15rem; font-size: .97rem; }
-    .banda p { margin: 0; font-size: .86rem; }
-    .banda .boton { flex: none; }
+    .banda h3 { margin: 0 0 .15rem; font-size: .87rem; color: var(--acento); }
+    .banda p { margin: 0; font-size: .85rem; }
+
+    /* Las tres preguntas, en tres columnas propias. No heredan la rejilla
+       de arriba a proposito: no se corresponden con los tres servicios. */
+    .preguntas {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .5rem .9rem;
+      /* SIN `min-height: 0`, a diferencia del resto de la pagina. Ese
+         `0` es lo que permite a una rejilla encoger una fila por debajo
+         de su contenido, y aqui lo hacia: las preguntas recibian 78px
+         para 121px de texto y las ultimas lineas se solapaban con el
+         cierre. En una columna que se desplaza, encoger esta bien; en un
+         bloque de prosa que no se desplaza, es texto encima de texto. */
+    }
+
+    .preguntas > div {
+      min-width: 0;
+      padding-left: .7rem;
+      border-left: 2px solid #c3ddcc;
+    }
+
+    .banda-pie {
+      display: flex;
+      align-items: center;
+      gap: .6rem 1.1rem;
+      flex-wrap: wrap;
+      padding-top: .45rem;
+      border-top: 1px solid #c3ddcc;
+    }
+
+    .banda-pie p { flex: 1 1 26rem; min-width: 0; }
+    .banda-pie .boton { flex: none; }
 
     /* «lo hace una persona» usa la misma forma de pastilla que «gratis» y
        «en construcción», y un color propio: es una categoria distinta, no
@@ -563,18 +610,77 @@
       border: 1px solid #c3ddcc;
     }
 
-    /* La franja existe PARA LLENAR el blanco que dejan las columnas, asi
-       que solo aparece cuando ese blanco existe. Por debajo de 700px de
-       alto util no lo hay: a 1280x600 la franja se llevaba 93px de
-       columna y tiraba los SEIS botones de pago fuera de la pantalla.
-       Pagar la visibilidad de un servicio con la de los otros tres es un
-       mal cambio.
-       La asesoria no desaparece de esas pantallas: sigue enlazada en el
-       pie, y `paginaTresColumnas.test.ts` lo fija. */
+    /* La seccion 4 existe PARA LLENAR el blanco que dejan las columnas,
+       asi que solo aparece cuando ese blanco existe. Por debajo de 700px
+       de alto util no lo hay: a 1280x600 se llevaba 93px de columna y
+       tiraba los SEIS botones de pago fuera de la pantalla. Pagar la
+       visibilidad de un servicio con la de los otros tres es un mal
+       cambio. La asesoria no desaparece de esas pantallas: sigue enlazada
+       en el pie, y `paginaTresColumnas.test.ts` lo fija.
+
+       Y con ella se va tambien el reparto de filas: sin seccion 4 no hay
+       nadie que absorba el sobrante, asi que vuelven a crecer las
+       columnas. Si solo se ocultara la seccion, su fila `1fr` seguiria
+       existiendo y dejaria el mismo hueco en blanco, ahora vacio del
+       todo. */
     .banda { display: none; }
 
-    @media (min-height: 700px) {
-      .banda { display: flex; }
+    @media (min-height: 700px) and (min-width: 1150px) {
+      .banda { display: grid; }
+      body {
+        grid-template-rows: auto minmax(0, max-content) minmax(0, 1fr) auto;
+      }
+    }
+
+    /* TRES ESCALONES, no dos, y lo prescindible se esconde antes que lo
+       esencial: primero las tres preguntas, despues el parrafo de cierre,
+       y el BOTON no se toca nunca. Sin este escalonado el boton se cortaba
+       3px a 1366x768 y 25px a 1152x800 — el mismo fallo que el resto de la
+       pagina lleva toda la sesion evitando, reaparecido dentro de la
+       seccion que se añadio precisamente para llenar el hueco.
+
+       Las tres preguntas piden unos 120px que a 768 de alto no existen:
+       con los logotipos al +30%, las tres columnas y el pie, la suma pasa
+       de la pantalla. Recortar el texto hasta que quepa en la peor
+       pantalla habria dejado peor la version buena en todas las demas.
+
+       Los umbrales salen de medir, no de numeros redondos: las preguntas
+       esperan a 920px de alto (a 900 el boton sobresalia 4px) y la seccion
+       entera exige 1200px de ancho (a 1152 sobresalia 17, porque con la
+       pantalla estrecha el parrafo de entrada ocupa mas lineas). Entre
+       1150 y 1200 de ancho la asesoria queda en el enlace del pie. */
+    .preguntas, .banda-pie p { display: none; }
+
+    /* Entre 1150 y 1200 de ancho solo cabe lo esencial: cae el argumento
+       de venta, se queda la advertencia. Ocultar la seccion entera en esa
+       franja dejaba 189px en blanco justo debajo de las columnas. */
+    @media (max-width: 1199px) {
+      .banda .argumento { display: none; }
+    }
+
+    /* Sin parrafo, el cierre es solo el boton: la regla de separacion no
+       separa nada y se quita. */
+    .banda-pie { border-top: 0; padding-top: 0; justify-content: flex-end; }
+
+    @media (min-height: 920px) and (min-width: 1200px) {
+      .preguntas { display: grid; }
+      .banda-pie p { display: block; }
+      .banda-pie {
+        border-top: 1px solid #c3ddcc;
+        padding-top: .4rem;
+        justify-content: flex-start;
+      }
+    }
+
+    /* El +30% de los logotipos se paga con alto de columna, y en una
+       pantalla baja ese alto no esta disponible: a 1280x600 la cabecera
+       paso de 92px a 111px y volvieron a caer cuatro botones de pago
+       fuera. Aqui los logotipos valen menos que los botones, asi que el
+       aumento se aplica donde hay sitio y por debajo de 700px vuelven a
+       un tamaño que sigue dejando leer «Inception Program». */
+    @media (max-height: 700px) {
+      .logos .aideatext { width: 46px; height: 46px; }
+      .logos .nvidia { height: 46px; }
     }
 
     /* AFINADO DEL EQUILIBRIO, solo con ancho de sobra.
@@ -680,8 +786,8 @@
 
       /* Los logotipos se quedan en su tamaño legible, pero en una pantalla
          estrecha no pueden comerse media altura util. */
-      .logos .aideatext { width: 48px; height: 48px; }
-      .logos .nvidia { height: 48px; }
+      .logos .aideatext { width: 62px; height: 62px; }
+      .logos .nvidia { height: 62px; }
 
       /* En una columna a pantalla completa, dos botones por fila siguen
          cabiendo y evitan una torre de cuatro. Por debajo de 380px se
@@ -689,9 +795,16 @@
       .comprar .boton { flex: 1 1 42%; }
 
       /* En el telefono la pagina se desplaza, asi que no hay blanco que
-         llenar ni alto que disputar: la franja vuelve, apilada. */
-      .banda { display: flex; }
+         llenar ni alto que disputar: la seccion 4 vuelve, apilada. */
+      .banda { display: grid; overflow: visible; }
       .banda .boton { width: 100%; }
+
+      /* Las tres preguntas en fila no caben en un movil: a 390px cada una
+         se quedaria en ~115px y partiria «argu-mentación» por la mitad. */
+      .preguntas { display: grid; grid-template-columns: 1fr; }
+      .banda .argumento { display: block; }
+      .banda-pie p { display: block; }
+      .banda-pie { border-top: 1px solid #c3ddcc; padding-top: .4rem; justify-content: flex-start; }
     }
 
 
@@ -715,9 +828,9 @@
       <!-- `width`/`height` reales, no decorativos: el navegador reserva el
            hueco antes de descargar la imagen y la barra no da un salto al
            cargar. 144x62 conserva la proporcion 79:34 del SVG original. -->
-      <img class="aideatext" src="/img/Logo_300x300.png" width="62" height="62"
+      <img class="aideatext" src="/img/Logo_300x300.png" width="81" height="81"
            alt="AIdeaText" />
-      <img class="nvidia" src="/img/nvidia-inception-color.svg" width="144" height="62"
+      <img class="nvidia" src="/img/nvidia-inception-color.svg" width="188" height="81"
            alt="AIdeaText es miembro del programa NVIDIA Inception" />
     </span>
 
@@ -868,9 +981,9 @@
            500— y no lo detecto nada. -->
       <p class="condicion">
         <strong>Estudiantes y organizaciones sin fines de lucro</strong> pagan
-        la mitad; la tarifa exige un correo institucional validado.
-        <strong>Empresas y profesionales</strong>, la de al lado. Lo hacemos
-        a mano: al pagar te escribimos por tu archivo y el plazo.
+        la mitad; exige un correo institucional validado.
+        <strong>Empresas y profesionales</strong>, la tarifa de al lado. Lo
+        hacemos a mano: al pagar te escribimos por tu archivo y el plazo.
       </p>
 
       <div class="tarifa">
@@ -963,22 +1076,81 @@
        seria cobrar sin que el comprador haya leido lo unico que podria
        hacerle cambiar de idea. -->
   <section class="banda">
-    <div class="banda-texto">
+    <div class="banda-cabecera">
       <h2>
-        <span class="paso">4.</span> Asesoría: preparación de documentos
-        académicos, administrativos y de proyectos
+        <span class="paso">4.</span> Asesoría para el análisis de documentos
+        con <strong>grafos de razonamiento semántico</strong>
         <span class="humano">lo hace una persona</span>
       </h2>
+      <!-- Dos parrafos y no uno, y la division no es de estilo. El
+           primero es el argumento de venta y puede esperar a que haya
+           sitio. El segundo es la advertencia de que este servicio SI lee
+           tu documento, y esa no espera nunca: la portada entera promete
+           lo contrario, y un boton de pago sin ese aviso al lado usaria
+           la confianza de las tres columnas para vender su excepcion. -->
+      <p class="argumento">
+        Tu documento se dibuja como un grafo y la <em>forma</em> del dibujo
+        es el razonamiento que lo sostiene. Es la técnica de
+        <a href="https://aideatext.ai">AIdeaText</a>, y aquí aprendes a
+        leerla con tu propio texto.
+      </p>
       <p>
-        Empieza con una reunión para conocer tu caso: de ahí salen el
-        alcance, el plazo y un precio cerrado, y recién entonces decides.
-        <strong>500 MXN</strong>, como una consulta médica —y se descuentan
-        del trabajo si nos contratas—. A diferencia de las tres columnas de
-        arriba, aquí <strong>sí leemos lo que escribiste</strong>: no hay
-        forma de asesorarte sin leerlo.
+        Eso significa que aquí <strong>sí leemos lo que escribiste</strong>:
+        las tres columnas de arriba no tocan tu archivo; ésta sí.
       </p>
     </div>
-    <a class="boton" href="/asesoriatesis/">Ver cómo funciona</a>
+
+    <!-- Las tres preguntas que pidio el dueño, cada una respondida con lo
+         que el grafo MUESTRA de verdad. El guion de AIdeaText
+         (`explicacion/guion.md`) trae una tabla de cosas que no hay que
+         decir, y dos de ellas caen justo aqui: el tamaño de un concepto es
+         su FRECUENCIA y no su importancia, y el sistema no dice si algo
+         esta bien razonado. Las dos quedan escritas abajo en vez de
+         omitidas: son el limite del metodo y decirlo es lo que hace
+         creible el resto. -->
+    <div class="preguntas">
+      <div>
+        <h3>¿Qué razonamiento hay en tu argumentación?</h3>
+        <p>
+          Se ve en la forma. Una <strong>estrella</strong> es deductiva: un
+          concepto sostiene a los demás. Un <strong>embudo</strong> es
+          inductiva: casos sueltos abajo que arriba se recogen en pocas
+          ideas. <strong>Coronas</strong>, abductiva: conceptos por los que
+          pasa la explicación. <strong>Dos lóbulos</strong>, analógica: dos
+          desarrollos en paralelo y las líneas que los cruzan.
+        </p>
+      </div>
+      <div>
+        <h3>¿Qué concepto pesa más frente a los otros?</h3>
+        <p>
+          El color lo dice: mide <strong>con cuántos otros conceptos se
+          conecta</strong>, y ése es el peso que importa en un argumento.
+          Ojo con el tamaño: el tamaño es <strong>frecuencia</strong>, no
+          importancia —una muletilla repetida sale grande—.
+        </p>
+      </div>
+      <div>
+        <h3>¿Están todos los conceptos vinculados?</h3>
+        <p>
+          Las islas se ven a simple vista. La distancia al centro no es
+          decorativa: es a cuántos pasos está cada concepto del núcleo.
+          Un concepto que nadie toca es una idea que enunciaste y no
+          llegaste a integrar.
+        </p>
+      </div>
+    </div>
+
+    <div class="banda-pie">
+      <p>
+        <strong>Lo que la distingue:</strong> el grafo no lo coloca una
+        simulación, así que un concepto <strong>solo se mueve cuando cambia
+        lo que mide</strong> —compara dos borradores y el movimiento es el
+        diagnóstico—. No dice si está bien razonado: dice cómo está armado.
+      </p>
+      <a class="boton" href="/asesoriatesis/">
+        Primera reunión · 500 MXN
+      </a>
+    </div>
   </section>
 
   <footer>
