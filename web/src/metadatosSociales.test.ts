@@ -9,6 +9,7 @@ import { describe, it, expect } from 'vitest';
  * `readFileSync` aqui rompe `tsc --noEmit` y con el `npm run build`.
  */
 import html from '../index.html?raw';
+import asesoria from '../asesoriatesis/index.html?raw';
 
 const contenidoDe = (patron: RegExp): string | null =>
   html.match(patron)?.[1] ?? null;
@@ -62,7 +63,51 @@ describe('la pagina no carga nada de fuera', () => {
     const recursos = [...html.matchAll(/<(?:img|script|link)[^>]*>/g)].map(
       (m) => m[0]
     );
-    const externos = recursos.filter((t) => /(?:src|href)="https?:/.test(t));
+    const externos = recursos
+      // `rel="canonical"` se excluye porque NO CARGA NADA: es una
+      // declaracion, igual que `og:url`, y el navegador nunca la pide. Lo
+      // que esta prueba vigila es que la portada no descargue un recurso
+      // de un tercero —una tipografia, un script, una imagen—, y eso
+      // sigue vigilado: un `<link rel="stylesheet">` externo falla aqui.
+      .filter((t) => !/rel="canonical"/.test(t))
+      .filter((t) => /(?:src|href)="https?:/.test(t));
     expect(externos).toEqual([]);
+  });
+});
+
+// ── El dominio canónico ──────────────────────────────────────────────
+//
+// El sitio se sirve desde dos dominios y seguirá así mientras el viejo
+// tenga enlaces compartidos por ahí. Sin `canonical` son dos copias
+// idénticas: un buscador las indexa por separado y reparte el peso.
+describe('el dominio canónico', () => {
+  const canonicoDe = (documento: string): string =>
+    documento.match(/<link rel="canonical" href="([^"]+)"/)?.[1] ?? '';
+
+  it('las dos páginas declaran su canónico en aidesk', () => {
+    expect(canonicoDe(html)).toBe('https://aidesk.aideatext.ai/');
+    expect(canonicoDe(asesoria)).toBe(
+      'https://aidesk.aideatext.ai/asesoriatesis/'
+    );
+  });
+
+  // Absoluto, no relativo: una ruta relativa se resuelve contra el
+  // dominio que sirvió la página, que es exactamente lo que hay que
+  // desambiguar. Un `canonical` relativo no desambigua nada.
+  it('el canónico es absoluto y no apunta al dominio viejo', () => {
+    for (const doc of [html, asesoria]) {
+      expect(canonicoDe(doc)).toMatch(/^https:\/\/aidesk\.aideatext\.ai\//);
+      expect(canonicoDe(doc)).not.toContain('//desk.aideatext.ai');
+    }
+  });
+
+  // `og:url` y `canonical` tienen que decir lo mismo. Si discrepan, cada
+  // consumidor cree a uno distinto: los buscadores al canónico, las redes
+  // sociales al `og:url`.
+  it('coincide con og:url en cada página', () => {
+    const ogUrl = (d: string) =>
+      d.match(/<meta property="og:url" content="([^"]+)"/)?.[1] ?? '';
+    expect(canonicoDe(html)).toBe(ogUrl(html));
+    expect(canonicoDe(asesoria)).toBe(ogUrl(asesoria));
   });
 });

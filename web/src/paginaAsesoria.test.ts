@@ -129,7 +129,8 @@ describe('la página de asesoría', () => {
       (m) => m[1]
     );
     const fuera = externos.filter(
-      (e) => !/^https:\/\/(github\.com|aideatext\.ai|buy\.stripe\.com)/.test(e)
+      (e) =>
+        !/^https:\/\/(github\.com|(?:[\w-]+\.)?aideatext\.ai|buy\.stripe\.com)/.test(e)
     );
     expect(fuera).toEqual([]);
     expect(externos.length).toBeGreaterThan(0);

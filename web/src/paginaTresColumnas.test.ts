@@ -302,7 +302,10 @@ describe('la pagina no envia nada a ninguna parte', () => {
     const externos = enlaces.filter((h) => /^https?:/.test(h));
     const fuera = externos.filter(
       (e) =>
-        !/^https:\/\/(github\.com|aideatext\.ai|buy\.stripe\.com)/.test(e)
+        // `[\w-]+\.` cubre los subdominios propios: el sitio se sirve
+        // desde `aidesk.aideatext.ai` y el canonico apunta ahi. Sin esto
+        // la lista blanca trataba al propio sitio como un tercero.
+        !/^https:\/\/(github\.com|(?:[\w-]+\.)?aideatext\.ai|buy\.stripe\.com)/.test(e)
     );
     expect(fuera).toEqual([]);
     // Control: el filtro encuentra enlaces de verdad, no una lista vacía
