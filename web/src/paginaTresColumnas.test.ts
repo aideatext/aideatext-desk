@@ -88,6 +88,38 @@ describe('columna 1: gratis y completa', () => {
     expect(p).toMatch(/calidad, no de tamaño/);
   });
 
+  // El precio del OCR estaba solo dentro del informe, o sea: solo lo veia
+  // quien ya habia soltado un PDF escaneado. Quien llegaba a la pagina no
+  // tenia forma de saber que esta columna vende algo ni cuanto cuesta.
+  it('publica el precio del OCR sin esperar a que sueltes un archivo', () => {
+    expect(columnas[0]).toContain(PRODUCTOS.ocrEstudiante.url);
+    expect(columnas[0]).toContain(PRODUCTOS.ocrEmpresa.url);
+    expect(columnas[0]).toContain(`${PRODUCTOS.ocrEstudiante.importeMxn} MXN`);
+    expect(columnas[0]).toContain(`${PRODUCTOS.ocrEmpresa.importeMxn} MXN`);
+  });
+
+  it('no manda las dos tarifas de OCR al mismo enlace', () => {
+    const enlaces = [
+      ...columnas[0].matchAll(/https:\/\/buy\.stripe\.com\/\w+/g),
+    ].map((m) => m[0]);
+    expect(enlaces).toHaveLength(2);
+    expect(new Set(enlaces).size).toBe(2);
+  });
+
+  // La columna 1 promete que el archivo no sale del navegador, y el OCR es
+  // la unica excepcion. Si el boton se publica sin esa advertencia al
+  // lado, la pagina usa la confianza que acaba de ganar para esconder
+  // justo el caso donde no aplica.
+  it('avisa de que el OCR si recibe el archivo, junto al precio', () => {
+    expect(prosa(columnas[0])).toMatch(/sí recibe tu archivo/);
+  });
+
+  // Y no puede dejar de ser gratis lo que ya era gratis. El diagnostico
+  // sigue sin costar nada: es lo que hace creible el precio de al lado.
+  it('sigue diciendo que el diagnostico es gratis', () => {
+    expect(prosa(columnas[0])).toMatch(/te decimos gratis si está escaneado/);
+  });
+
   it('mantiene la herramienta real en su sitio', () => {
     expect(columnas[0]).toContain('id="zona"');
     expect(columnas[0]).toContain('id="archivo"');
@@ -263,11 +295,13 @@ describe('encabezado y pie', () => {
     const barra = html.match(/<header class="barra">([\s\S]*?)<\/header>/)?.[1] ?? '';
     expect(barra).toContain('/img/Logo_300x300.png');
     expect(barra).toContain('/img/nvidia-inception-color.svg');
-    // «Legible» aqui es medible: 34px de alto para los dos. Un logotipo
-    // de 16px no se lee, y la especificacion lo pedia expresamente.
+    // «Legible» aqui es medible. A 34px la palabra «Inception» del logo de
+    // NVIDIA era una mancha verde; las reglas de uso de esa marca piden
+    // que se lea. El suelo son 56px, y esta escrito como suelo y no como
+    // valor exacto para que subirlos no rompa la prueba — bajarlos si.
     const altos = [...barra.matchAll(/height="(\d+)"/g)].map((m) => Number(m[1]));
     expect(altos).toHaveLength(2);
-    for (const alto of altos) expect(alto).toBeGreaterThanOrEqual(32);
+    for (const alto of altos) expect(alto).toBeGreaterThanOrEqual(56);
   });
 
   it('lleva DESK con su frase y la promesa de la especificacion', () => {

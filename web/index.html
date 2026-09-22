@@ -92,7 +92,13 @@
                    "Helvetica Neue", Arial, sans-serif;
       color: var(--tinta);
       background: var(--fondo);
-      font-size: 15px;
+      /* El cuerpo crece con el ALTO de la ventana, no con el ancho. Una
+         pagina que cabe exactamente en la pantalla tiene el problema
+         inverso al normal: en un monitor de 27 pulgadas sobraba un tercio
+         de alto en blanco, y en un portatil de 14 faltaba. Ligar el tamaño
+         al alto resuelve los dos a la vez — 17.5px arriba, 14.5px abajo—
+         en vez de elegir uno y estropear el otro. */
+      font-size: clamp(14.5px, 0.95vh + 8px, 17.5px);
       line-height: 1.45;
       margin: 0;
       padding: 0 clamp(.7rem, 1.8vw, 1.5rem);
@@ -101,6 +107,16 @@
       height: 100vh;
       height: 100dvh;
       overflow: hidden;
+    }
+
+    /* Tope de ancho para las tres franjas, centrado. Sin el, en un monitor
+       de 1920 las columnas se estiran hasta lineas de 90 caracteres: cabe
+       todo, pero cuesta leerlo. El tope no afecta a 1366 ni a 1280, donde
+       la pantalla ya es mas estrecha que el tope. */
+    .barra, .columnas, footer {
+      width: 100%;
+      max-width: 1400px;
+      margin-inline: auto;
     }
 
     h1, h2, h3 { letter-spacing: -.01em; }
@@ -131,19 +147,38 @@
     .barra {
       display: flex;
       align-items: center;
-      gap: .55rem .8rem;
+      gap: .5rem 1.4rem;
       flex-wrap: wrap;
-      padding: .4rem 0 .35rem;
-      border-bottom: 1px solid var(--linea);
+      padding: .7rem 0 .6rem;
+      border-bottom: 2px solid var(--linea);
     }
 
-    .logos { display: flex; align-items: center; gap: .6rem; flex: none; }
-    .logos .aideatext { width: 34px; height: 34px; display: block; }
-    .logos .nvidia { height: 34px; width: auto; display: block; }
+    /* Los logotipos al doble (34px -> 62px). A 34px el texto «Inception»
+       del logo de NVIDIA no se leia: era una mancha verde, y las reglas de
+       uso de la marca exigen que sea legible y con aire alrededor. Ese aire
+       es el `gap` de 1.4rem de la barra, no un margen suelto. */
+    /* El alto crece con la pantalla: 62px en un monitor grande, ~45px en
+       un portatil de 14 pulgadas. Un tamaño fijo obligaba a elegir entre
+       un logotipo ilegible arriba o dos botones de pago fuera de la
+       pantalla abajo — a 1280x600 los 62px fijos costaban exactamente eso.
+       El suelo de 44px sigue dejando leer «Inception Program». */
+    .logos { display: flex; align-items: center; gap: 1rem; flex: none; }
+
+    .logos .aideatext {
+      width: clamp(44px, 7.6vh, 62px);
+      height: clamp(44px, 7.6vh, 62px);
+      display: block;
+    }
+
+    .logos .nvidia {
+      height: clamp(44px, 7.6vh, 62px);
+      width: auto;
+      display: block;
+    }
 
     .titulo { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
     .titulo .nombre { font-weight: 800; letter-spacing: .05em; }
-    .titulo .frase { color: var(--tenue); font-size: .95rem; }
+    .titulo .frase { color: var(--tenue); font-size: 1rem; }
 
     /* La promesa de la especificacion. Va arriba, donde se lee, y no
        escondida en el pie: es la respuesta anticipada a cada limite que
@@ -273,6 +308,23 @@
     }
 
     .comprar .importe { font-size: 1rem; }
+
+    /* La oferta de OCR se separa de la zona de soltar con una regla, no
+       con un recuadro: un recuadro mas dentro de una columna que ya tiene
+       el recuadro de soltar y el del informe convierte la columna en una
+       pila de cajas. */
+    .ocr-oferta {
+      margin-top: .5rem;
+      padding-top: .45rem;
+      border-top: 1px solid var(--linea);
+    }
+
+    /* Cuando hay informe en pantalla, la oferta de arriba sobra: el
+       informe trae la suya, con el veredicto del archivo de verdad al
+       lado. Dos ofertas del mismo servicio en la misma columna es ruido,
+       y ademas desbordaria el alto. */
+    #resultado:not(:empty) ~ * .ocr-oferta,
+    .col:has(#resultado:not(:empty)) .ocr-oferta { display: none; }
 
     .comprar .unitario {
       display: block;
@@ -445,6 +497,18 @@
     .plegado li { margin-bottom: .25rem; }
     .plegado p:last-child { margin-bottom: 0; }
 
+    /* El desplegable de la columna 1 vive dentro de una columna de alto
+       fijo, no en el pie: al abrirlo tiene que caber ahi dentro y no
+       empujar la herramienta fuera de la pantalla. */
+    .porque { margin: 0 0 .5rem; }
+    .porque .plegado { max-width: none; }
+
+    /* El ultimo elemento de una columna no arrastra su margen inferior:
+       son los 14px que dejaban la columna 1 desbordando por nada a
+       1280x600, sin que se cortara ningun contenido visible. */
+    .col > *:last-child,
+    .ocr-oferta > *:last-child { margin-bottom: 0; }
+
     /* -- Pie --------------------------------------------------- */
 
     footer {
@@ -516,9 +580,12 @@
   <!-- ===== Encabezado ===== -->
   <header class="barra">
     <span class="logos">
-      <img class="aideatext" src="/img/Logo_300x300.png" width="34" height="34"
+      <!-- `width`/`height` reales, no decorativos: el navegador reserva el
+           hueco antes de descargar la imagen y la barra no da un salto al
+           cargar. 144x62 conserva la proporcion 79:34 del SVG original. -->
+      <img class="aideatext" src="/img/Logo_300x300.png" width="62" height="62"
            alt="AIdeaText" />
-      <img class="nvidia" src="/img/nvidia-inception-color.svg" width="79" height="34"
+      <img class="nvidia" src="/img/nvidia-inception-color.svg" width="144" height="62"
            alt="AIdeaText es miembro del programa NVIDIA Inception" />
     </span>
 
@@ -549,17 +616,38 @@
            Markdown salio de ~3,579 tokens contra los ~3,526 del texto del
            PDF, un 1.5% MAS grande. «Consumiran menos tokens» era falso, y
            el resto del argumento no lo necesita. -->
+      <!-- El beneficio primero, la explicacion plegada. Es el criterio que
+           pidio el dueño para toda la pagina —«el beneficio, y en una
+           pestaña desplegable todo el rollo»— y era la unica columna donde
+           no se habia aplicado: nueve lineas de teoria sobre formatos
+           antes de llegar a la herramienta.
+
+           Ademas paga el alto que costaron los logotipos grandes y los
+           botones de OCR: a 1280x600 esta columna desbordaba 157px y los
+           dos botones de pago caian fuera de la pantalla. -->
       <p>
-        Un PDF describe cómo se <em>ve</em> una página —posición de cada
-        carácter, fuente, coordenadas—, no la estructura lógica del
-        contenido; Markdown sí preserva la jerarquía: títulos, listas,
-        tablas, énfasis. Eso hace el contenido procesable, no solo
-        visible. Un PDF mal extraído llega con saltos de línea
-        absurdos, columnas mezcladas, encabezados y pies repetidos y texto
-        en el orden equivocado, y eso degrada la calidad de cualquier
-        análisis que hagas después con ChatGPT, Claude o Gemini. Es un
-        problema de calidad, no de tamaño.
+        Tu tesis, en un archivo que ChatGPT, Claude o Gemini leen
+        <strong>entero y bien estructurado</strong> —con sus títulos, listas
+        y tablas en su sitio—. Gratis, sin tope de páginas y sin que el
+        archivo salga de tu navegador.
       </p>
+
+      <details class="porque">
+        <summary>¿Por qué convertirlo, y no pegarle el PDF directamente?</summary>
+        <div class="plegado">
+          <p>
+            Un PDF describe cómo se <em>ve</em> una página —posición de cada
+            carácter, fuente, coordenadas—, no la estructura lógica del
+            contenido; Markdown sí preserva la jerarquía: títulos, listas,
+            tablas, énfasis. Eso hace el contenido procesable, no solo
+            visible. Un PDF mal extraído llega con saltos de línea
+            absurdos, columnas mezcladas, encabezados y pies repetidos y
+            texto en el orden equivocado, y eso degrada la calidad de
+            cualquier análisis que hagas después con ChatGPT, Claude o
+            Gemini. Es un problema de calidad, no de tamaño.
+          </p>
+        </div>
+      </details>
 
       <div id="zona">
         <p><strong>Arrastra tu PDF aquí</strong>, o haz clic para elegirlo</p>
@@ -572,6 +660,31 @@
           servidor: compruébalo en «Seguridad», abajo.
         </p>
         <input type="file" id="archivo" accept="application/pdf" hidden />
+      </div>
+
+      <!-- El precio del OCR, A LA VISTA desde que se carga la pagina.
+           Antes solo existia dentro del informe, es decir: solo lo veia
+           quien ya habia soltado un PDF escaneado. Quien llegaba a la
+           pagina no tenia forma de saber que esta columna tambien vende
+           algo, ni cuanto cuesta. Los botones del informe siguen ahi —es
+           el momento de mayor intencion, con el problema ya demostrado por
+           su propio archivo— pero el precio ya no depende de descubrirlo. -->
+      <div class="ocr-oferta">
+        <p class="condicion">
+          ¿Es un <strong>escaneo</strong> —una foto de cada página—? No hay
+          texto que extraer: hace falta OCR, que corre en servidor y
+          <strong>sí recibe tu archivo</strong>. Suéltalo arriba y te
+          decimos gratis si está escaneado; y pide una página de muestra,
+          también gratis, antes de pagar.
+        </p>
+        <p class="comprar">
+          <a class="boton" href="https://buy.stripe.com/cNi3cv0L9beidM6cHh5c405">
+            Estudiante<br /><span class="importe">300 MXN</span>
+          </a>
+          <a class="boton secundario" href="https://buy.stripe.com/fZu5kDgK7aae9vQbDd5c404">
+            Empresa<br /><span class="importe">500 MXN</span>
+          </a>
+        </p>
       </div>
 
       <div id="resultado"></div>
@@ -616,9 +729,8 @@
       <p class="condicion">
         <strong>Estudiantes y organizaciones sin fines de lucro</strong> pagan
         la mitad; la tarifa exige un correo institucional validado.
-        <strong>Empresas y profesionales</strong>, la de al lado. Lo
-        producimos a mano: al pagar te escribimos para recibir tu archivo y
-        acordar el plazo.
+        <strong>Empresas y profesionales</strong>, la de al lado. Lo hacemos
+        a mano: al pagar te escribimos por tu archivo y el plazo.
       </p>
 
       <div class="tarifa">
