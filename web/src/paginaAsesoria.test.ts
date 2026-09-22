@@ -17,8 +17,17 @@ const texto = marcado.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 describe('la página de asesoría', () => {
   it('se llama como el servicio, no como la URL', () => {
     expect(texto).toMatch(
-      /Asesoría: preparación de documentos académicos, administrativos y de proyectos/
+      /Asesoría para el análisis de documentos con grafos de razonamiento semántico/
     );
+  });
+
+  // La página se vació a propósito: lo que explica el servicio vive en la
+  // sección 4 de la portada, que es de donde se llega. Esta prueba fija
+  // esa decisión — si alguien vuelve a llenarla de prosa, el visitante
+  // lee dos veces lo mismo antes de poder pagar.
+  it('no repite la explicación que ya está en la portada', () => {
+    expect(texto).not.toMatch(/Cómo funciona/);
+    expect(texto).not.toMatch(/estrella|embudo|Coronas|lóbulos/);
   });
 
   it('cobra la primera reunión con el enlace correcto', () => {
@@ -42,8 +51,18 @@ describe('la página de asesoría', () => {
   // usando la confianza que gana la portada para vender justo el caso
   // donde esa promesa no aplica.
   it('dice sin rodeos que aquí sí se leen los documentos', () => {
-    expect(texto).toMatch(/Aquí sí leemos tus documentos/);
-    expect(texto).toMatch(/una persona lee lo que escribiste/);
+    expect(texto).toMatch(/sí leemos tu documento/);
+    expect(texto).toMatch(/no hay forma de asesorarte sin leerlo/);
+  });
+
+  // Al vaciar la página se quedó fuera todo el texto MENOS éste, y no por
+  // descuido. Es el único servicio donde una persona lee la tesis del
+  // cliente; cobrar por él sin decir en ninguna parte qué pasa con el
+  // archivo no es una decisión de maquetación.
+  it('conserva qué se hace con el archivo', () => {
+    expect(texto).toMatch(/No lo publicamos, no lo compartimos/);
+    expect(texto).toMatch(/no lo usamos para entrenar nada/);
+    expect(texto).toMatch(/lo borramos al terminar, o antes si lo pides/);
   });
 
   // El aviso tiene que leerse ANTES de pagar, y «antes» aquí significa
@@ -53,22 +72,25 @@ describe('la página de asesoría', () => {
   // alguien decida no contratar. Una advertencia que llega tarde no es una
   // advertencia.
   it('el aviso aparece antes del botón de pago, no después', () => {
-    const aviso = marcado.indexOf('Aquí sí leemos tus documentos');
+    const aviso = marcado.indexOf('sí leemos tu documento');
     const boton = marcado.indexOf(PRODUCTOS.asesoria.url);
     expect(aviso).toBeGreaterThan(-1);
     expect(boton).toBeGreaterThan(-1);
     expect(aviso).toBeLessThan(boton);
   });
 
-  it('explica que del primer encuentro sale alcance, tiempo y precio', () => {
-    expect(texto).toMatch(/alcance/i);
-    expect(texto).toMatch(/precio cerrado/i);
-    expect(texto).toMatch(/Cuántas reuniones/i);
-    expect(texto).toMatch(/cuántos documentos/i);
+  // La página ya no explica «qué no es» porque ya no explica nada. La
+  // regla que ese texto sostenía sigue viva como prohibición: ningún
+  // copy futuro puede prometer que escribimos la tesis del cliente.
+  it('no promete escribir la tesis de nadie', () => {
+    const t = texto.toLowerCase();
+    expect(t).not.toMatch(/escribimos tu tesis/);
+    expect(t).not.toMatch(/te la dejamos lista/);
+    expect(t).not.toMatch(/redactamos por ti/);
   });
 
-  it('no promete escribir la tesis por nadie', () => {
-    expect(texto).toMatch(/No escribimos tu tesis por ti/);
+  it('el botón invita a agendar', () => {
+    expect(texto).toMatch(/Agenda tu reunión/);
   });
 
   // El descuento es un compromiso comercial, no un adorno: quien paga los

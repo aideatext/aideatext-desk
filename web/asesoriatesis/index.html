@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light" />
 
-  <title>Asesoría — preparación de documentos académicos, administrativos y de proyectos | AIDesk</title>
+  <title>Asesoría con grafos de razonamiento semántico | AIDesk</title>
   <meta name="description"
-        content="Una primera reunión para conocer tu caso y fijar juntos el alcance, el tiempo y el precio del trabajo. 500 MXN, como una consulta médica." />
+        content="Agenda la primera reunión para analizar tu documento con grafos de razonamiento semántico. 500 MXN, y se descuentan del trabajo si nos contratas." />
 
   <link rel="icon" type="image/png" sizes="32x32" href="/img/Logo32x32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="/img/Logo64x64.png" />
@@ -17,18 +17,18 @@
   <meta property="og:site_name" content="AIdeaText" />
   <meta property="og:locale" content="es_MX" />
   <meta property="og:url" content="https://desk.aideatext.ai/asesoriatesis/" />
-  <meta property="og:title" content="Asesoría para tu tesis, tu proyecto o tu expediente" />
+  <meta property="og:title" content="Analiza tu documento con grafos de razonamiento semántico" />
   <meta property="og:description"
-        content="Una primera reunión para conocer tu caso y fijar juntos el alcance, el tiempo y el precio. 500 MXN, como una consulta médica." />
+        content="Agenda la primera reunión. 500 MXN, y se descuentan del trabajo si nos contratas." />
   <meta property="og:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
   <meta property="og:image:width" content="1920" />
   <meta property="og:image:height" content="1080" />
   <meta property="og:image:alt" content="AIdeaText" />
 
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Asesoría para tu tesis, tu proyecto o tu expediente" />
+  <meta name="twitter:title" content="Analiza tu documento con grafos de razonamiento semántico" />
   <meta name="twitter:description"
-        content="Una primera reunión para conocer tu caso y fijar juntos el alcance, el tiempo y el precio." />
+        content="Agenda la primera reunión. 500 MXN, y se descuentan del trabajo si nos contratas." />
   <meta name="twitter:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
   <meta name="twitter:image:alt" content="AIdeaText" />
 
@@ -183,6 +183,20 @@
     .aviso h2 { margin-top: 0; color: var(--duda); }
     .aviso p:last-child { margin-bottom: 0; }
 
+    /* Lo unico que quedo de texto. No es letra chica escondida: es del
+       mismo cuerpo que el resto y va justo debajo del boton. */
+    .datos {
+      margin: 1.3rem 0 0;
+      padding: .8rem 1rem;
+      border: 1px solid #e6d7a8;
+      border-radius: 12px;
+      background: var(--duda-suave);
+      color: var(--duda);
+      font-size: .92rem;
+    }
+
+    .datos a { color: var(--duda); }
+
     /* -- Pie --------------------------------------------------- */
 
     footer {
@@ -238,92 +252,41 @@
     </header>
 
     <main>
-      <h1>Asesoría: preparación de documentos académicos, administrativos y de proyectos</h1>
+      <h1>Asesoría para el análisis de documentos con grafos de razonamiento semántico</h1>
 
-      <p class="entradilla">
-        Empieza con una reunión para conocer tu caso. De ahí sale el alcance,
-        el tiempo y el precio del trabajo —y recién entonces decides si
-        seguimos.
+      <!-- SIN prosa: el dueño pidió dejar solo el pago y el calendario.
+           Lo que explica el servicio vive en la sección 4 de la portada,
+           que es de donde se llega aquí; repetirlo pondría a alguien a
+           leer dos veces lo mismo antes de poder pagar.
+
+           La única línea que NO se borró es la del tratamiento de datos.
+           Es el único servicio donde una persona lee la tesis del cliente,
+           y cobrar por él sin decir en ninguna parte qué pasa con el
+           archivo no es una decisión de maquetación. Ocupa dos renglones
+           y enlaza al detalle. -->
+      <p class="datos">
+        Aquí <strong>sí leemos tu documento</strong>: no hay forma de
+        asesorarte sin leerlo. No lo publicamos, no lo compartimos y no lo
+        usamos para entrenar nada; lo borramos al terminar, o antes si lo
+        pides. El detalle, en
+        <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos</a>.
       </p>
 
-      <h2>Cómo funciona</h2>
-
-      <ol>
-        <li>
-          <strong>Agendas la primera reunión.</strong> Nos cuentas qué tienes
-          entre manos: una tesis, un proyecto, un expediente, un informe.
-        </li>
-        <li>
-          <strong>Definimos el alcance ahí mismo.</strong> Cuántas reuniones
-          hacen falta, cuántos documentos hay que revisar, en qué plazo, y
-          cualquier otra cosa que cambie el trabajo.
-        </li>
-        <li>
-          <strong>Sale un precio cerrado.</strong> Uno solo, por el trabajo
-          completo, acordado antes de empezar. Sin sorpresas después.
-        </li>
-        <li>
-          <strong>Decides.</strong> Si no seguimos, te quedas igual con el
-          diagnóstico de la primera reunión: qué le falta a tu documento y
-          por dónde se empieza.
-        </li>
-      </ol>
-
-      <div class="aviso">
-        <h2>Aquí sí leemos tus documentos</h2>
-        <p>
-          En <a href="/">la portada de AIDesk</a> el archivo no sale de tu
-          navegador, y esa página existe para que puedas comprobarlo. Este
-          servicio es lo contrario, y conviene decirlo claro:
-          <strong>aquí una persona lee lo que escribiste</strong>, porque no
-          hay manera de asesorarte sin leerlo.
-        </p>
-        <p>
-          Nos mandas solo lo que haga falta para el trabajo acordado. No lo
-          publicamos, no lo compartimos con nadie y no lo usamos para
-          entrenar nada. Cuando terminamos, lo borramos —y si prefieres que
-          lo borremos antes, lo borramos antes: basta con que lo pidas.
-        </p>
-        <p>
-          Si esto te incomoda, no lo contrates. Lo demás de AIDesk sigue
-          funcionando sin que nos envíes nada.
-        </p>
-      </div>
-
-      <!-- El aviso va ANTES del bloque de compra, no después. Abajo se leía
-           igual de bien, pero se leía después de haber pagado — y es
-           justamente la información que puede hacer que alguien decida no
-           contratar. Una advertencia que llega tarde no es una
-           advertencia. `paginaAsesoria.test.ts` fija este orden. -->
       <div class="compra">
         <p class="precio">500 MXN</p>
         <p class="porque">
-          La primera reunión, como una consulta médica: se paga la consulta,
-          no el diagnóstico gratis de quien no tiene tiempo de dártelo bien.
+          La primera reunión, como una consulta médica.
           <strong>Si después nos contratas, estos 500 se descuentan del
           trabajo.</strong>
         </p>
         <a class="boton" href="https://buy.stripe.com/dRm9AT2Th6Y2azUbDd5c406">
-          Agendar la primera reunión
+          Agenda tu reunión
         </a>
         <p class="despues">
-          Al pagar, Stripe nos deja tu correo y te escribimos para cuadrar
-          día y hora. Pagos con tarjeta o en OXXO.
+          Al pagar eliges el día y la hora. Tarjeta u OXXO.
         </p>
       </div>
 
-      <h2>Qué no es</h2>
-
-      <p>
-        No escribimos tu tesis por ti, y no existe el paquete de «te la dejo
-        lista». Lo que hacemos es leer lo que ya tienes, decirte qué se
-        sostiene y qué no, y trabajar contigo para que lo defiendas tú.
-      </p>
-
-      <p>
-        ¿Dudas antes de pagar?
-        <a href="mailto:first.contact.desk@aideatext.ai?subject=Consulta%20sobre%20la%20asesor%C3%ADa">first.contact.desk@aideatext.ai</a>
-      </p>
     </main>
 
     <footer>

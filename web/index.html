@@ -215,7 +215,11 @@
          condicionado al ancho: estrechar la tercera columna la hace mas
          alta, y eso solo se puede pagar cuando sobra sitio. */
       grid-template-columns: 1.15fr 1fr 1fr;
-      gap: .9rem;
+      /* Separacion entre servicios. Los tres son cosas distintas que se
+         compran por separado, y un `gap` estrecho con una raya fina los
+         leia como tres parrafos de un mismo bloque. El aire es horizontal
+         —no cuesta alto, que es lo escaso— y la raya de abajo lo remata. */
+      gap: 1.6rem;
       min-height: 0;
       padding: .5rem 0;
     }
@@ -227,15 +231,27 @@
     }
 
     .col + .col {
-      border-left: 1px solid var(--linea);
-      padding-left: .9rem;
+      border-left: 2px solid var(--linea);
+      padding-left: 1.6rem;
     }
 
+    /* Cada servicio abre con su numero en un circulo verde. Es el ancla
+       visual que dice «aqui empieza otra cosa» antes de leer una palabra,
+       y hace el trabajo que una raya sola no hacia. */
     .paso {
-      color: var(--acento);
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5em;
+      height: 1.5em;
+      margin-right: .15em;
+      border-radius: 999px;
+      background: var(--acento);
+      color: #fff;
+      font-size: .85em;
+      line-height: 1;
     }
+
 
     /* -- La herramienta ---------------------------------------- */
 
@@ -860,7 +876,7 @@
          otras dos columnas. El dueño acepto la correccion. -->
     <div class="col">
       <h2>
-        <span class="paso">1.</span> PDF → Markdown
+        <span class="paso">1</span> PDF → Markdown
         <span class="gratis">gratis y completo</span>
       </h2>
 
@@ -947,7 +963,7 @@
     <!-- ===== 2. Markdown a audio: todavia no existe ===== -->
     <div class="col">
       <h2>
-        <span class="paso">2.</span> Markdown → Audio (MP3)
+        <span class="paso">2</span> Markdown → Audio (MP3)
         <span class="pronto">en construcción</span>
       </h2>
 
@@ -1021,7 +1037,7 @@
     <!-- ===== 3. Traduccion en audio: todavia no existe ===== -->
     <div class="col">
       <h2>
-        <span class="paso">3.</span> Traducción ES ↔ EN en audio
+        <span class="paso">3</span> Traducción ES ↔ EN en audio
         <span class="pronto">en construcción</span>
       </h2>
 
@@ -1078,7 +1094,7 @@
   <section class="banda">
     <div class="banda-cabecera">
       <h2>
-        <span class="paso">4.</span> Asesoría para el análisis de documentos
+        <span class="paso">4</span> Asesoría para el análisis de documentos
         con <strong>grafos de razonamiento semántico</strong>
         <span class="humano">lo hace una persona</span>
       </h2>
@@ -1096,7 +1112,8 @@
       </p>
       <p>
         Eso significa que aquí <strong>sí leemos lo que escribiste</strong>:
-        las tres columnas de arriba no tocan tu archivo; ésta sí.
+        las tres columnas de arriba no tocan tu archivo; ésta sí. En una o
+        en varias sesiones trabajaremos lo siguiente:
       </p>
     </div>
 
@@ -1148,7 +1165,7 @@
         diagnóstico—. No dice si está bien razonado: dice cómo está armado.
       </p>
       <a class="boton" href="/asesoriatesis/">
-        Primera reunión · 500 MXN
+        Agenda tu reunión · 500 MXN
       </a>
     </div>
   </section>
