@@ -103,7 +103,13 @@
       margin: 0;
       padding: 0 clamp(.7rem, 1.8vw, 1.5rem);
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto;
+      /* Cuatro filas: cabecera, columnas, franja de asesoria y pie. Solo
+         la de las columnas crece. La franja se lleva el blanco que las
+         tres columnas dejaban abajo —ninguna llegaba al suelo— y de paso
+         saca la asesoria del pie, donde era un enlace que no pulsaba
+         nadie. Al acortarse el alto disponible, las tres columnas quedan
+         ademas mas parejas entre si. */
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
       height: 100vh;
       height: 100dvh;
       overflow: hidden;
@@ -113,7 +119,7 @@
        de 1920 las columnas se estiran hasta lineas de 90 caracteres: cabe
        todo, pero cuesta leerlo. El tope no afecta a 1366 ni a 1280, donde
        la pantalla ya es mas estrecha que el tope. */
-    .barra, .columnas, footer {
+    .barra, .columnas, .banda, footer {
       width: 100%;
       max-width: 1400px;
       margin-inline: auto;
@@ -201,6 +207,9 @@
 
     .columnas {
       display: grid;
+      /* Reparto base. El afinado para equilibrar los altos esta mas abajo,
+         condicionado al ancho: estrechar la tercera columna la hace mas
+         alta, y eso solo se puede pagar cuando sobra sitio. */
       grid-template-columns: 1.15fr 1fr 1fr;
       gap: .9rem;
       min-height: 0;
@@ -516,6 +525,71 @@
     .col > *:last-child,
     .ocr-oferta > *:last-child { margin-bottom: 0; }
 
+    /* -- Franja de asesoria ------------------------------------ */
+
+    /* Fondo distinto al de las columnas, a proposito: marca que lo de
+       abajo no es el cuarto servicio de la misma lista sino otra cosa.
+       El texto y el boton en fila para que la franja sea baja — se lleva
+       el blanco sobrante, no lo sustituye por una caja igual de grande. */
+    .banda {
+      display: flex;
+      align-items: center;
+      gap: .8rem 1.2rem;
+      flex-wrap: wrap;
+      margin-bottom: .4rem;
+      padding: .6rem .85rem;
+      border: 1px solid #c3ddcc;
+      border-radius: 10px;
+      background: var(--acento-suave);
+    }
+
+    .banda-texto { flex: 1 1 24rem; min-width: 0; }
+    .banda h2 { margin: 0 0 .15rem; font-size: .97rem; }
+    .banda p { margin: 0; font-size: .86rem; }
+    .banda .boton { flex: none; }
+
+    /* «lo hace una persona» usa la misma forma de pastilla que «gratis» y
+       «en construcción», y un color propio: es una categoria distinta, no
+       un estado del mismo servicio. */
+    .humano {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0 .45rem;
+      font-size: .78rem;
+      font-weight: 700;
+      white-space: nowrap;
+      background: #fff;
+      color: var(--acento);
+      border: 1px solid #c3ddcc;
+    }
+
+    /* La franja existe PARA LLENAR el blanco que dejan las columnas, asi
+       que solo aparece cuando ese blanco existe. Por debajo de 700px de
+       alto util no lo hay: a 1280x600 la franja se llevaba 93px de
+       columna y tiraba los SEIS botones de pago fuera de la pantalla.
+       Pagar la visibilidad de un servicio con la de los otros tres es un
+       mal cambio.
+       La asesoria no desaparece de esas pantallas: sigue enlazada en el
+       pie, y `paginaTresColumnas.test.ts` lo fija. */
+    .banda { display: none; }
+
+    @media (min-height: 700px) {
+      .banda { display: flex; }
+    }
+
+    /* AFINADO DEL EQUILIBRIO, solo con ancho de sobra.
+       La columna de traduccion tiene menos que decir: con anchos casi
+       iguales sobraban 118px por abajo frente a los 72 de la segunda.
+       Estrecharla sube su prosa a mas lineas y la nivela — la dispersion
+       del blanco baja de 46px a 29.
+       Pero es una moneda de dos caras: a 1280 de ancho esa misma columna
+       se quedaba en 345px y desbordaba 41px. Por eso el afinado empieza a
+       los 1340 y no antes. Equilibrar por ancho solo funciona cuando hay
+       ancho que repartir. */
+    @media (min-width: 1340px) {
+      .columnas { grid-template-columns: 1.2fr 1.05fr 0.9fr; }
+    }
+
     /* -- Pie --------------------------------------------------- */
 
     footer {
@@ -549,10 +623,19 @@
     }
 
     /* ===== Apilado en una columna =====
-       Por debajo de 900px no se pelea por el alto: se apila y se permite el
-       desplazamiento. Un telefono se desplaza de todos modos, y forzar tres
-       columnas ahi solo produciria texto ilegible. */
-    @media (max-width: 899px) {
+       Por debajo de 1150px no se pelea por el alto: se apila y se permite
+       el desplazamiento. Un telefono se desplaza de todos modos, y forzar
+       tres columnas ahi solo produciria texto ilegible.
+
+       EL UMBRAL ESTUVO EN 899px Y ERA DEMASIADO BAJO. Un barrido de nueve
+       tamaños lo destapo: a 1024x768 —un iPad apaisado, o media pantalla
+       de un monitor— las tres columnas desbordaban y se cortaban CUATRO
+       botones de pago; a 900x700 se cortaban los seis. La pagina no se
+       desplazaba, asi que no habia forma de llegar a ellos: no era un
+       apretujon, era contenido inalcanzable. Entre 900 y 1150 de ancho
+       este contenido no cabe en tres columnas, y apilarlo es mejor que
+       recortarlo. */
+    @media (max-width: 1149px) {
       body {
         display: block;
         height: auto;
@@ -604,6 +687,11 @@
          cabiendo y evitan una torre de cuatro. Por debajo de 380px se
          apilan solos: `flex-wrap` ya lo resuelve. */
       .comprar .boton { flex: 1 1 42%; }
+
+      /* En el telefono la pagina se desplaza, asi que no hay blanco que
+         llenar ni alto que disputar: la franja vuelve, apilada. */
+      .banda { display: flex; }
+      .banda .boton { width: 100%; }
     }
 
 
@@ -612,7 +700,7 @@
        contenido en una rejilla sin scroll seria peor que dejarlo fluir.
        Queda muy por debajo del objetivo de 600px, asi que no afecta a la
        medicion. */
-    @media (max-height: 520px) and (min-width: 900px) {
+    @media (max-height: 520px) and (min-width: 1150px) {
       body { display: block; height: auto; overflow: visible; }
       .col { overflow: visible; }
       footer { max-height: none; overflow: visible; }
@@ -861,6 +949,37 @@
     </div>
 
   </main>
+
+  <!-- ===== 4. Asesoria: una franja, no una cuarta columna =====
+       Los tres servicios de arriba son automaticos y el archivo no sale
+       del navegador. Este es otro genero: lo hace una persona, y esa
+       persona lee tu documento. Ponerlo como cuarta columna lo igualaria
+       con los otros tres y mezclaria las dos promesas; a lo ancho se lee
+       como lo que es, otra cosa.
+
+       El boton lleva a /asesoriatesis y NO al checkout de Stripe, aunque
+       el enlace de pago existe y seria un clic menos. Toda la advertencia
+       de que aqui si leemos los documentos vive en esa pagina: saltarsela
+       seria cobrar sin que el comprador haya leido lo unico que podria
+       hacerle cambiar de idea. -->
+  <section class="banda">
+    <div class="banda-texto">
+      <h2>
+        <span class="paso">4.</span> Asesoría: preparación de documentos
+        académicos, administrativos y de proyectos
+        <span class="humano">lo hace una persona</span>
+      </h2>
+      <p>
+        Empieza con una reunión para conocer tu caso: de ahí salen el
+        alcance, el plazo y un precio cerrado, y recién entonces decides.
+        <strong>500 MXN</strong>, como una consulta médica —y se descuentan
+        del trabajo si nos contratas—. A diferencia de las tres columnas de
+        arriba, aquí <strong>sí leemos lo que escribiste</strong>: no hay
+        forma de asesorarte sin leerlo.
+      </p>
+    </div>
+    <a class="boton" href="/asesoriatesis/">Ver cómo funciona</a>
+  </section>
 
   <footer>
     <div class="fila">

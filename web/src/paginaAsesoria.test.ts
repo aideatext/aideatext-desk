@@ -123,9 +123,37 @@ describe('la portada enlaza a la asesoría', () => {
     expect(pie).toContain('/asesoriatesis/');
   });
 
+  const banda = () =>
+    portada.match(/<section class="banda">([\s\S]*?)<\/section>/)?.[1] ?? '';
+
+  it('la anuncia en una franja bajo las tres columnas', () => {
+    expect(banda()).toContain('/asesoriatesis/');
+    expect(banda()).toMatch(/Asesoría/);
+  });
+
+  // LA PRUEBA QUE IMPORTA DE LA FRANJA. El enlace de pago existe y
+  // ponerlo aquí sería un clic menos, pero toda la advertencia de que en
+  // este servicio SÍ leemos los documentos vive en `/asesoriatesis`.
+  // Cobrar desde la portada se saltaría lo único que podría hacer que
+  // alguien cambie de idea.
+  it('la franja lleva a la página, NO al checkout', () => {
+    expect(banda()).not.toContain('buy.stripe.com');
+    expect(banda()).not.toContain(PRODUCTOS.asesoria.url);
+  });
+
+  // Y aun así la franja tiene que decirlo, porque hay quien pulsa sin
+  // leer: la portada promete que nada sale del navegador y esta franja
+  // vive debajo de esa promesa.
+  it('la franja avisa de que este servicio sí lee lo que escribiste', () => {
+    expect(banda().replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')).toMatch(
+      /sí leemos lo que escribiste/
+    );
+  });
+
   // La asesoría NO entra en las tres columnas: ahí el argumento es que el
   // archivo no sale del navegador, y este servicio lo contradice. Son dos
-  // promesas distintas y no pueden compartir columna.
+  // promesas distintas y no pueden compartir columna. Una franja aparte,
+  // debajo y con otro fondo, se lee como lo que es: otra cosa.
   it('no la mete en las tres columnas', () => {
     const columnas = [
       ...portada.matchAll(/<div class="col">([\s\S]*?)\n    <\/div>/g),
