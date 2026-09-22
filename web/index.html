@@ -238,6 +238,63 @@
     button:hover, .boton:hover { background: #0e3d21; color: #fff; }
     button:disabled { opacity: .6; cursor: progress; }
 
+    /* La tarifa de empresa en secundario, no por jerarquia visual sino por
+       honestidad: la mayoria de quien llega aqui es estudiante, y el boton
+       que destaca tiene que ser el suyo. Sigue siendo un boton legible y
+       pulsable, no un enlace escondido. */
+    .boton.secundario {
+      color: var(--acento);
+      background: #fff;
+    }
+    .boton.secundario:hover { background: var(--acento-suave); color: var(--acento); }
+
+    /* Los botones de compra se envuelven en varias lineas en una columna
+       estrecha; `gap` evita que se peguen al envolverse, cosa que `margin`
+       no resuelve sin dejar un hueco suelto al final de cada fila. */
+    .comprar, .ocr-botones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+      margin: .35rem 0 .5rem;
+    }
+
+    .comprar .boton, .ocr-botones .boton {
+      font-size: .86rem;
+      padding: .4rem .6rem;
+      flex: 1 1 auto;
+    }
+
+    /* Dos botones de cuatro llevan una tercera linea (el precio por hora) y
+       dos no. `align-items: stretch` —el valor por defecto de flex— les da
+       a todos el alto del mas alto, asi que no quedan escalonados. */
+    .comprar .boton {
+      flex: 1 1 45%;
+      line-height: 1.25;
+    }
+
+    .comprar .importe { font-size: 1rem; }
+
+    .comprar .unitario {
+      display: block;
+      font-size: .74rem;
+      font-weight: 400;
+      opacity: .85;
+    }
+
+    /* El aviso de que el OCR si envia el archivo va en rojo de alerta y
+       pegado al boton. Es la unica excepcion a la promesa que sostiene la
+       columna 1, y quien paga tiene que leerla ANTES de pulsar, no en el
+       pie de pagina. */
+    .ocr-aviso {
+      font-size: .85rem;
+      margin: .5rem 0 .35rem;
+      padding: .4rem .5rem;
+      border-radius: 8px;
+      color: var(--duda);
+      background: var(--duda-suave);
+      border: 1px solid #e6d7a8;
+    }
+
     /* -- Recuadro de ahorro ------------------------------------ */
 
     .ahorro-cifras {
@@ -528,34 +585,40 @@
         <span class="pronto">en construcción</span>
       </h2>
 
+      <!-- Recortado a tres lineas. A 1280x600 —un portatil de 14 pulgadas
+           con la barra del navegador— esta columna desbordaba 80px y el
+           cuarto boton de pago caia fuera del corte. Lo que sobraba era
+           prosa; los botones no se tocan. -->
       <p>
-        Sabemos que te toma entre una y dos horas llegar a la universidad o
-        volver a casa. Leer en el camino —en el metro, en el metrobús— es
-        incómodo; escuchar es sencillo. Aprovecha ese tiempo escuchando tu
-        tesis, tu ensayo o el capítulo del libro que te toca leer esta
-        semana.
+        Te toma entre una y dos horas llegar a la universidad o volver a
+        casa. Leer en el metro o el metrobús es incómodo; escuchar, no.
+        Escucha tu tesis, tu ensayo o el capítulo que te toca esta semana.
       </p>
 
-      <dl class="precios">
-        <div>
-          <dt>Estudiantes y organizaciones sin fines de lucro</dt>
-          <dd>
-            <span class="cifra">200 MXN</span> por hasta 4 horas de audio
-            <span class="hora">(50 MXN la hora)</span>
-          </dd>
-        </div>
-        <div>
-          <dt>Empresas y profesionales</dt>
-          <dd>
-            <span class="cifra">500 MXN</span> por hasta 4 horas de audio
-            <span class="hora">(125 MXN la hora)</span>
-          </dd>
-        </div>
-      </dl>
+      <!-- SIN tabla de precios, y no por falta de sitio: la tabla decia
+           exactamente lo mismo que los cuatro botones, y los botones ademas
+           se pueden pulsar. Con la tabla, esta columna media 651px de
+           contenido en 487px de alto y el cuarto boton —el de 800— quedaba
+           fuera de pantalla a 1366x640, dentro de un desplazamiento interno
+           que casi nadie descubre. Un precio duplicado costaba una venta.
 
+           Enlaces planos a Stripe, no `fetch`: la CSP declara
+           `connect-src 'self'` y `form-action 'none'`, y ninguna de las dos
+           alcanza a una navegacion de primer nivel. El boton funciona sin
+           tocar una linea de la politica, y ese fue el criterio para
+           elegir Payment Links sobre Stripe.js.
+
+           Las cifras impresas aqui estan fijadas contra `pagos.ts` por
+           `paginaTresColumnas.test.ts`, que copia lo que cobra Stripe: la
+           pagina y el checkout no pueden divergir en silencio. Ya paso una
+           vez —la pagina decia «200 por 4 horas», el checkout cobraba
+           500— y no lo detecto nada. -->
       <p class="condicion">
-        La tarifa de 200 MXN <strong>exige un correo institucional
-        validado</strong>. Es la condición, y no hay letra chica.
+        <strong>Estudiantes y organizaciones sin fines de lucro</strong> pagan
+        la mitad; la tarifa exige un correo institucional validado.
+        <strong>Empresas y profesionales</strong>, la de al lado. Lo
+        producimos a mano: al pagar te escribimos para recibir tu archivo y
+        acordar el plazo.
       </p>
 
       <div class="tarifa">
@@ -566,15 +629,28 @@
         <p class="tarifa-veredicto" role="status"></p>
       </div>
 
-      <a class="boton"
-         href="mailto:first.contact.desk@aideatext.ai?subject=Lista%20de%20espera%3A%20Markdown%20a%20audio%20%28MP3%29&amp;body=Hola%3A%0A%0AQuiero%20que%20me%20avisen%20cuando%20est%C3%A9%20listo%20el%20servicio%20de%20Markdown%20a%20audio%20%28MP3%29.%0A%0AQu%C3%A9%20quiero%20escuchar%20%28tesis%2C%20ensayo%2C%20cap%C3%ADtulo%29%3A%0ADuraci%C3%B3n%20aproximada%3A%0AMi%20correo%20institucional%20%28si%20aplica%29%3A%0A">
-        Avísame cuando esté listo
-      </a>
-
-      <p class="apunte">
-        Se abre tu programa de correo con el mensaje escrito. No hay
-        formulario, no hay servidor y no guardamos nada aquí.
+      <!-- El precio por hora va DENTRO del boton, no en un parrafo debajo.
+           En el parrafo quedaba por debajo del corte de la columna a
+           1366x640, y es justo el argumento que vende el tramo de 4 horas:
+           sin verlo, «500» solo parece mas caro que «200». Aqui se lee en
+           el momento de decidir, y ademas cabe. -->
+      <p class="comprar">
+        <a class="boton" href="https://buy.stripe.com/bJeaEX0L9fuy8rM36H5c402">
+          Estudiante · 1 h<br /><span class="importe">200 MXN</span>
+        </a>
+        <a class="boton" href="https://buy.stripe.com/bJeaEX2Th6Y28rM5eP5c403">
+          Estudiante · 4 h<br /><span class="importe">500 MXN</span>
+          <span class="unitario">125 MXN la hora</span>
+        </a>
+        <a class="boton secundario" href="https://buy.stripe.com/3cI3cv1Pdcim37s8r15c400">
+          Empresa · 1 h<br /><span class="importe">400 MXN</span>
+        </a>
+        <a class="boton secundario" href="https://buy.stripe.com/8x2cN579x2HM37sgXx5c401">
+          Empresa · 4 h<br /><span class="importe">800 MXN</span>
+          <span class="unitario">200 MXN la hora</span>
+        </a>
       </p>
+
     </div>
 
     <!-- ===== 3. Traduccion en audio: todavia no existe ===== -->
@@ -592,35 +668,22 @@
         entregamos el audio en el otro idioma.
       </p>
 
-      <dl class="precios">
-        <div>
-          <dt>Estudiantes y organizaciones sin fines de lucro</dt>
-          <dd>
-            <span class="cifra">200 MXN</span> por hasta 4 horas de audio
-            <span class="hora">(50 MXN la hora)</span>
-          </dd>
-        </div>
-        <div>
-          <dt>Empresas y profesionales</dt>
-          <dd>
-            <span class="cifra">500 MXN</span> por hasta 4 horas de audio
-            <span class="hora">(125 MXN la hora)</span>
-          </dd>
-        </div>
-      </dl>
-
+      <!-- SIN tabla de precios, y es deliberado. Los otros dos servicios
+           publican cifras porque existe un enlace de cobro detrás de cada
+           una; la traducción todavía no tiene ninguno. Publicar aquí «200
+           MXN» habría sido inventar un precio que nadie puede pagar, y
+           dejar la página prometiendo una cifra que el día que exista el
+           producto probablemente no sea esa. Se dice lo que se sabe. -->
       <p class="condicion">
-        La tarifa de 200 MXN <strong>exige un correo institucional
-        validado</strong>. Es la condición, y no hay letra chica.
+        Aún no tenemos precio cerrado para este servicio. Lo ponemos cuando
+        podamos cobrarlo, no antes.
       </p>
 
-      <div class="tarifa">
-        <label for="correo-traduccion">¿Tu correo aplica? Escríbelo y te decimos:</label>
-        <input type="email" id="correo-traduccion" class="correo-tarifa"
-               autocomplete="email" spellcheck="false"
-               placeholder="tucorreo@comunidad.unam.mx" />
-        <p class="tarifa-veredicto" role="status"></p>
-      </div>
+      <p>
+        Dinos qué necesitas traducir y te avisamos en cuanto esté —con el
+        precio ya puesto. Lo que nos escribas aquí es, literalmente, lo que
+        decide qué construimos primero.
+      </p>
 
       <a class="boton"
          href="mailto:first.contact.desk@aideatext.ai?subject=Lista%20de%20espera%3A%20traducci%C3%B3n%20ES-EN%20en%20audio&amp;body=Hola%3A%0A%0AQuiero%20que%20me%20avisen%20cuando%20est%C3%A9%20listo%20el%20servicio%20de%20traducci%C3%B3n%20espa%C3%B1ol-ingl%C3%A9s%20en%20audio.%0A%0AQu%C3%A9%20necesito%20traducir%20%28ponencia%2C%20art%C3%ADculo%2C%20bibliograf%C3%ADa%29%3A%0ADirecci%C3%B3n%20%28de%20ES%20a%20EN%2C%20o%20de%20EN%20a%20ES%29%3A%0ADuraci%C3%B3n%20aproximada%3A%0AMi%20correo%20institucional%20%28si%20aplica%29%3A%0A">

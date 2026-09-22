@@ -7,11 +7,7 @@ import { describe, it, expect } from 'vitest';
  * incluye los tipos de Node).
  */
 import html from '../index.html?raw';
-import {
-  PRECIO_INSTITUCIONAL_MXN,
-  PRECIO_GENERAL_MXN,
-  HORAS_INCLUIDAS,
-} from './ui/instituciones';
+import { PRODUCTOS, porHora } from './ui/pagos';
 
 /** Texto visible, sin etiquetas ni saltos de linea de la maquetacion. */
 const texto = html
@@ -100,55 +96,122 @@ describe('columna 1: gratis y completa', () => {
   });
 });
 
-describe('columnas 2 y 3: precio y lista de espera', () => {
-  it('publican las dos tarifas con su precio por hora', () => {
-    for (const col of [columnas[1], columnas[2]]) {
-      expect(col).toContain(`${PRECIO_INSTITUCIONAL_MXN} MXN`);
-      expect(col).toContain(`${PRECIO_GENERAL_MXN} MXN`);
-      expect(col).toContain(`hasta ${HORAS_INCLUIDAS} horas de audio`);
-      expect(col).toContain('50 MXN la hora');
-      expect(col).toContain('125 MXN la hora');
-      expect(col).toMatch(/sin fines de lucro/);
-      expect(col).toMatch(/Empresas y profesionales/);
+describe('columna 2: precio y cobro del audio', () => {
+  const audio = () => columnas[1];
+
+  // Las cuatro cifras salen de `pagos.ts`, que copia lo que cobra Stripe.
+  // Escribirlas a mano en el HTML fue exactamente el fallo anterior: la
+  // pagina decia «200 MXN por hasta 4 horas» y el checkout cobraba 500 por
+  // esas 4 horas. Quien hacia clic convencido por el 200 se encontraba 2.5x
+  // mas caro, y nada en el codigo lo detectaba.
+  it('publica los cuatro tramos con el importe que cobra Stripe', () => {
+    for (const p of [
+      PRODUCTOS.audio1hEstudiante,
+      PRODUCTOS.audio4hEstudiante,
+      PRODUCTOS.audio1hEmpresa,
+      PRODUCTOS.audio4hEmpresa,
+    ]) {
+      expect(audio()).toContain(`${p.importeMxn} MXN`);
+    }
+    expect(audio()).toMatch(/sin fines de lucro/);
+    expect(audio()).toMatch(/Empresas y profesionales/);
+  });
+
+  it('cablea los cuatro enlaces de pago del audio', () => {
+    for (const p of [
+      PRODUCTOS.audio1hEstudiante,
+      PRODUCTOS.audio4hEstudiante,
+      PRODUCTOS.audio1hEmpresa,
+      PRODUCTOS.audio4hEmpresa,
+    ]) {
+      expect(audio()).toContain(p.url);
     }
   });
 
-  it('dicen sin rodeos que el precio bajo exige correo institucional', () => {
-    for (const col of [columnas[1], columnas[2]]) {
-      expect(col).toMatch(/exige un correo institucional/);
-    }
+  // Cuatro botones que apuntan al mismo sitio es el fallo silencioso: la
+  // pagina se ve perfecta y la diferencia solo aparece al cuadrar caja.
+  it('no manda dos tramos al mismo enlace', () => {
+    const enlaces = [
+      ...audio().matchAll(/https:\/\/buy\.stripe\.com\/\w+/g),
+    ].map((m) => m[0]);
+    expect(enlaces).toHaveLength(4);
+    expect(new Set(enlaces).size).toBe(4);
   });
 
-  it('el aviso es un mailto prellenado, no un formulario', () => {
-    for (const col of [columnas[1], columnas[2]]) {
-      expect(col).toContain('Avísame cuando esté listo');
-      expect(col).toMatch(
-        /href="mailto:first\.contact\.desk@aideatext\.ai\?subject=[^"]*&amp;body=[^"]*"/
-      );
-    }
+  // El precio por hora del tramo largo es el unico argumento para comprarlo:
+  // sin el, «500 por 4 horas» solo parece mas caro que «200 por 1 hora».
+  it('muestra el precio por hora de cada tramo', () => {
+    expect(audio()).toContain(
+      `${porHora(PRODUCTOS.audio4hEstudiante, 4)} MXN la hora`
+    );
+    expect(audio()).toContain(
+      `${porHora(PRODUCTOS.audio4hEmpresa, 4)} MXN la hora`
+    );
   });
 
-  it('cada servicio manda un asunto distinto', () => {
-    const asunto = (col: string): string =>
-      col.match(/mailto:[^"]*subject=([^&]*)/)?.[1] ?? '';
-    expect(asunto(columnas[1])).toContain('Markdown');
-    expect(asunto(columnas[2])).toContain('traducci');
-    expect(asunto(columnas[1])).not.toBe(asunto(columnas[2]));
+  it('dice sin rodeos que el precio bajo exige correo institucional', () => {
+    expect(audio()).toMatch(/exige un correo institucional/);
   });
 
-  it('describen un caso de uso propio y verdadero', () => {
-    // Columna 2: el trayecto de 1-2 horas.
-    expect(columnas[1]).toMatch(/una y dos horas/);
-    expect(columnas[1]).toMatch(/metro/);
-    // Columna 3: la especificacion lo dejo vacio; aqui hay uno escrito.
-    expect(columnas[2]).toMatch(/congreso internacional/);
-    expect(columnas[2]).toMatch(/inglés/);
-  });
-
-  it('atan el comprobador de tarifa institucional', () => {
-    expect(columnas[1]).toContain('class="correo-tarifa"');
-    expect(columnas[2]).toContain('class="correo-tarifa"');
+  it('ata el comprobador de tarifa institucional', () => {
+    expect(audio()).toContain('class="correo-tarifa"');
     expect(html).toContain('/src/listaDeEspera.entry.ts');
+  });
+
+  // El servicio todavia se produce a mano. Cobrar por adelantado sin decir
+  // que la entrega no es automatica es vender una cosa y entregar otra.
+  it('avisa de que la entrega todavia es manual', () => {
+    expect(prosa(audio())).toMatch(/a mano/);
+  });
+
+  it('describe un caso de uso propio y verdadero', () => {
+    expect(audio()).toMatch(/una y dos horas/);
+    expect(audio()).toMatch(/metro/);
+  });
+});
+
+describe('columna 3: traduccion, sin producto todavia', () => {
+  const trad = () => columnas[2];
+
+  // NO hay enlace de cobro para la traduccion en la cuenta de Stripe. Un
+  // precio publicado sin enlace detras es una cifra que nadie puede pagar,
+  // y que el dia que exista el producto probablemente no sea esa.
+  it('no publica ningun precio', () => {
+    expect(trad()).not.toMatch(/\d+ MXN/);
+  });
+
+  it('no cablea ningun enlace de pago', () => {
+    expect(trad()).not.toContain('buy.stripe.com');
+  });
+
+  it('dice que el precio todavia no esta cerrado', () => {
+    expect(prosa(trad())).toMatch(/no tenemos precio cerrado/i);
+  });
+
+  it('sigue ofreciendo la lista de espera por mailto', () => {
+    expect(trad()).toContain('Avísame cuando esté listo');
+    expect(trad()).toMatch(
+      /href="mailto:first\.contact\.desk@aideatext\.ai\?subject=[^"]*&amp;body=[^"]*"/
+    );
+  });
+
+  it('describe un caso de uso propio y verdadero', () => {
+    expect(trad()).toMatch(/congreso internacional/);
+    expect(trad()).toMatch(/inglés/);
+  });
+});
+
+describe('las columnas 2 y 3 no se confunden entre si', () => {
+  // La columna 2 ya se cobra, asi que su llamada a la accion es comprar.
+  // La 3 todavia no tiene producto, asi que la suya es apuntarse. Dejar la
+  // lista de espera en la columna que ya vende manda a la gente a escribir
+  // un correo cuando podia pagar.
+  it('la 2 vende y la 3 apunta', () => {
+    expect(columnas[1]).toContain('buy.stripe.com');
+    expect(columnas[1]).not.toContain('Avísame cuando esté listo');
+
+    expect(columnas[2]).not.toContain('buy.stripe.com');
+    expect(columnas[2]).toContain('Avísame cuando esté listo');
   });
 });
 
@@ -162,14 +225,36 @@ describe('la pagina no envia nada a ninguna parte', () => {
     expect(marcado).toMatch(/<input\b/i);
   });
 
-  it('todo destino de contacto es mailto', () => {
+  // Lista blanca de destinos externos, no una regla general. Cada dominio
+  // que entra aqui tiene que entrar a mano, y esta prueba es el unico sitio
+  // donde eso se decide: si mañana alguien pega un iframe de analitica o un
+  // script de un CDN, falla aqui antes de llegar a produccion.
+  //
+  // `buy.stripe.com` es el unico destino externo que recibe algo del
+  // usuario, y lo recibe DESPUES de que haya pulsado: es una navegacion de
+  // primer nivel a otra pagina, no una peticion desde esta. La diferencia
+  // es la que sostiene toda la promesa del sitio — `connect-src 'self'`
+  // sigue impidiendo que este codigo hable con nadie, incluido Stripe, y el
+  // PDF nunca esta en el lado de la pagina cuando se abre el checkout.
+  it('todo destino externo esta en la lista blanca', () => {
     const enlaces = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
     const externos = enlaces.filter((h) => /^https?:/.test(h));
-    // Los unicos enlaces externos son de lectura (repositorio y sitio),
-    // nunca de envio.
-    for (const e of externos) {
-      expect(e).toMatch(/^https:\/\/(github\.com|aideatext\.ai)/);
-    }
+    const fuera = externos.filter(
+      (e) =>
+        !/^https:\/\/(github\.com|aideatext\.ai|buy\.stripe\.com)/.test(e)
+    );
+    expect(fuera).toEqual([]);
+    // Control: el filtro encuentra enlaces de verdad, no una lista vacía
+    // que pasaría la prueba por no mirar nada.
+    expect(externos.length).toBeGreaterThan(0);
+  });
+
+  // El checkout se abre navegando, nunca con `fetch`: hablar con Stripe
+  // desde este codigo exigiria abrir `connect-src`, y esa politica es el
+  // producto, no un detalle de configuracion.
+  it('no habla con Stripe desde el codigo de la pagina', () => {
+    expect(marcado).not.toMatch(/fetch\([^)]*stripe/i);
+    expect(marcado).not.toMatch(/js\.stripe\.com/i);
   });
 });
 

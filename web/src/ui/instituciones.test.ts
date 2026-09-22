@@ -4,10 +4,10 @@ import {
   dominioDe,
   tarifaPara,
   SUFIJOS_INSTITUCIONALES,
-  PRECIO_INSTITUCIONAL_MXN,
-  PRECIO_GENERAL_MXN,
-  HORAS_INCLUIDAS,
+  HORAS_TRAMO_CORTO,
+  HORAS_TRAMO_LARGO,
 } from './instituciones';
+import { PRODUCTOS } from './pagos';
 
 describe('esInstitucional', () => {
   // EL CASO QUE JUSTIFICA TODO EL MODULO. Las universidades mexicanas no
@@ -99,23 +99,52 @@ describe('dominioDe', () => {
 });
 
 describe('tarifaPara', () => {
-  it('le da 200 MXN por 4 horas al correo institucional', () => {
+  it('le da la tarifa de estudiante al correo institucional', () => {
     const t = tarifaPara('maria@comunidad.unam.mx');
     expect(t.institucional).toBe(true);
-    expect(t.mxn).toBe(PRECIO_INSTITUCIONAL_MXN);
-    expect(PRECIO_INSTITUCIONAL_MXN).toBe(200);
-    expect(t.mensaje).toContain('200 MXN');
-    expect(t.mensaje).toContain(`${HORAS_INCLUIDAS} horas`);
+    expect(t.mxnCorto).toBe(PRODUCTOS.audio1hEstudiante.importeMxn);
+    expect(t.mxnLargo).toBe(PRODUCTOS.audio4hEstudiante.importeMxn);
+    expect(t.urlCorto).toBe(PRODUCTOS.audio1hEstudiante.url);
+    expect(t.urlLargo).toBe(PRODUCTOS.audio4hEstudiante.url);
+    expect(t.mensaje).toContain(`${PRODUCTOS.audio1hEstudiante.importeMxn} MXN`);
+    expect(t.mensaje).toContain(`${HORAS_TRAMO_LARGO} horas`);
     // Control: al institucional no se le ofrece la lista de altas.
     expect(t.mensaje).not.toContain('no aparece');
   });
 
-  it('le da 500 MXN al correo que no esta en la lista', () => {
+  it('le da la tarifa general al correo que no esta en la lista', () => {
     const t = tarifaPara('ana@gmail.com');
     expect(t.institucional).toBe(false);
-    expect(t.mxn).toBe(PRECIO_GENERAL_MXN);
-    expect(PRECIO_GENERAL_MXN).toBe(500);
-    expect(t.mensaje).toContain('500 MXN');
+    expect(t.mxnCorto).toBe(PRODUCTOS.audio1hEmpresa.importeMxn);
+    expect(t.mxnLargo).toBe(PRODUCTOS.audio4hEmpresa.importeMxn);
+    expect(t.urlCorto).toBe(PRODUCTOS.audio1hEmpresa.url);
+    expect(t.urlLargo).toBe(PRODUCTOS.audio4hEmpresa.url);
+    expect(t.mensaje).toContain(`${PRODUCTOS.audio1hEmpresa.importeMxn} MXN`);
+  });
+
+  // La tarifa mostrada tiene que ser la que cobra el enlace que se le va a
+  // dar. Si `tarifaPara` dice «200 MXN» y devuelve el enlace de empresa, la
+  // persona lee un precio y paga otro — y nada falla hasta que reclama.
+  it('el importe que anuncia es el del enlace que devuelve', () => {
+    for (const correo of ['maria@comunidad.unam.mx', 'ana@gmail.com']) {
+      const t = tarifaPara(correo);
+      const porUrl = Object.values(PRODUCTOS);
+      expect(porUrl.find((p) => p.url === t.urlCorto)?.importeMxn).toBe(
+        t.mxnCorto
+      );
+      expect(porUrl.find((p) => p.url === t.urlLargo)?.importeMxn).toBe(
+        t.mxnLargo
+      );
+    }
+  });
+
+  // Las dos tarifas no pueden compartir enlace: seria cobrarle a todo el
+  // mundo lo mismo mientras se anuncian dos precios distintos.
+  it('las dos tarifas mandan a enlaces distintos', () => {
+    const inst = tarifaPara('maria@comunidad.unam.mx');
+    const gen = tarifaPara('ana@gmail.com');
+    expect(inst.urlCorto).not.toBe(gen.urlCorto);
+    expect(inst.urlLargo).not.toBe(gen.urlLargo);
   });
 
   // La regla de nunca decir «no se puede»: el que no coincide no recibe un
@@ -129,8 +158,16 @@ describe('tarifaPara', () => {
     expect(t.mensaje.toLowerCase()).not.toContain('no calificas');
   });
 
-  it('el precio por hora sale de la division declarada', () => {
-    expect(PRECIO_INSTITUCIONAL_MXN / HORAS_INCLUIDAS).toBe(50);
-    expect(PRECIO_GENERAL_MXN / HORAS_INCLUIDAS).toBe(125);
+  // El tramo largo existe para que comprar mas salga mejor. Es el modelo
+  // que pidio el dueño —bajar el precio unitario para que compren mas— y
+  // si deja de cumplirse, el argumento impreso en la pagina pasa a ser
+  // falso sin que nadie lo note.
+  it('el tramo de 4 horas sale mas barato por hora en las dos tarifas', () => {
+    for (const correo of ['maria@comunidad.unam.mx', 'ana@gmail.com']) {
+      const t = tarifaPara(correo);
+      expect(t.mxnLargo / HORAS_TRAMO_LARGO).toBeLessThan(
+        t.mxnCorto / HORAS_TRAMO_CORTO
+      );
+    }
   });
 });

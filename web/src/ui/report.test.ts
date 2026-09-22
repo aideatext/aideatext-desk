@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderDiagnosis } from './report';
+import { PRODUCTOS } from './pagos';
 import type { PdfDiagnosis } from '../pdf/diagnose';
 
 const base = (over: Partial<PdfDiagnosis>): PdfDiagnosis => ({
@@ -176,6 +177,71 @@ describe('renderDiagnosis', () => {
     ).toLowerCase();
     expect(html).not.toContain('ocr');
     expect(html).not.toContain('escaneada');
+  });
+
+  // -- Botones de pago ------------------------------------------------
+
+  const escaneado = () =>
+    renderDiagnosis(
+      base({
+        overall: 'escaneado',
+        convertibleInBrowser: false,
+        pages: [{ pageNumber: 1, kind: 'escaneado', charCount: 0 }],
+      })
+    );
+
+  it('ofrece las dos tarifas de OCR ante un PDF escaneado', () => {
+    const html = escaneado();
+    expect(html).toContain(PRODUCTOS.ocrEstudiante.url);
+    expect(html).toContain(PRODUCTOS.ocrEmpresa.url);
+  });
+
+  // Cablear los dos botones al mismo enlace es el error que traía el
+  // documento de origen, y el que menos se nota: la página se ve bien, no
+  // falla nada, y la diferencia solo aparece al cuadrar caja.
+  it('no manda las dos tarifas de OCR al mismo enlace', () => {
+    const html = escaneado();
+    const enlaces = [...html.matchAll(/https:\/\/buy\.stripe\.com\/\w+/g)].map(
+      (m) => m[0]
+    );
+    expect(new Set(enlaces).size).toBe(enlaces.length);
+  });
+
+  // La cifra impresa junto al botón sale del mismo sitio que el enlace. Si
+  // se separan, la página anuncia un precio y el checkout cobra otro —
+  // exactamente lo que pasaba cuando la página decía «200 por 4 horas» y
+  // Stripe cobraba 500 por esas 4 horas.
+  it('imprime el importe que cobra cada enlace de OCR', () => {
+    const html = escaneado();
+    expect(html).toContain(`${PRODUCTOS.ocrEstudiante.importeMxn} MXN`);
+    expect(html).toContain(`${PRODUCTOS.ocrEmpresa.importeMxn} MXN`);
+  });
+
+  // El argumento entero de la columna 1 es que el PDF no sale del
+  // navegador. El OCR es la excepción, y el aviso tiene que viajar pegado
+  // al botón: si se queda solo en el pie, quien paga se entera después.
+  it('avisa junto al boton de que el OCR si envia el archivo', () => {
+    expect(escaneado()).toContain('sí necesita tu archivo');
+  });
+
+  // Un PDF sin texto y sin imágenes no tiene nada que reconocer. Aquí el
+  // botón no es solo inútil: cobra por un trabajo imposible.
+  it('no ofrece ningun enlace de pago cuando el PDF esta vacio', () => {
+    const html = renderDiagnosis(
+      base({
+        overall: 'vacio',
+        convertibleInBrowser: false,
+        pages: [{ pageNumber: 1, kind: 'vacia', charCount: 0 }],
+      })
+    );
+    expect(html).not.toContain('buy.stripe.com');
+  });
+
+  // Un PDF que se convierte entero en el navegador no necesita OCR, y
+  // ofrecérselo convierte un servicio gratuito que funciona en un embudo
+  // de venta. La promesa de la columna 1 es que ahí no se cobra.
+  it('no ofrece ningun enlace de pago cuando el PDF ya es convertible', () => {
+    expect(renderDiagnosis(base({}))).not.toContain('buy.stripe.com');
   });
 
   it('indica el caso mixto explicitamente', () => {

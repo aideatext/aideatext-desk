@@ -23,6 +23,8 @@
  * después, por correo, entre personas.
  */
 
+import { PRODUCTOS, porHora } from './pagos';
+
 /**
  * Sufijos con tarifa institucional. Se guardan sin punto inicial; el
  * punto lo pone la comparación.
@@ -106,21 +108,28 @@ export function esInstitucional(correo: string): boolean {
 }
 
 // ── Precios ──────────────────────────────────────────────────────────
-// Modelo cerrado con el dueño del producto. Viven aquí, como constantes
-// con nombre, para que la página y las pruebas lean la misma cifra.
+// Ninguna cifra se escribe aquí: todas salen de `pagos.ts`, que a su vez
+// copia lo que cobra Stripe. Antes vivían en este archivo como constantes
+// propias, y el resultado fue que la página anunciaba «200 MXN por hasta 4
+// horas» mientras el checkout cobraba 500 por esas mismas 4 horas. Un
+// precio que se escribe en dos sitios acaba siendo dos precios.
 
-/** Horas de audio incluidas en cualquiera de las dos tarifas. */
-export const HORAS_INCLUIDAS = 4;
-/** Estudiantes y organizaciones sin fines de lucro. 50 MXN por hora. */
-export const PRECIO_INSTITUCIONAL_MXN = 200;
-/** Empresas y profesionales. 125 MXN por hora. */
-export const PRECIO_GENERAL_MXN = 500;
+/** Tramo corto: hasta una hora de audio. */
+export const HORAS_TRAMO_CORTO = 1;
+/** Tramo largo: hasta cuatro horas. Sale más barato por hora. */
+export const HORAS_TRAMO_LARGO = 4;
 
 export interface Tarifa {
   /** Si aplica el precio reducido. */
   institucional: boolean;
-  /** Precio en pesos mexicanos por hasta `HORAS_INCLUIDAS` horas. */
-  mxn: number;
+  /** Pesos por hasta `HORAS_TRAMO_CORTO` hora. */
+  mxnCorto: number;
+  /** Pesos por hasta `HORAS_TRAMO_LARGO` horas. */
+  mxnLargo: number;
+  /** Enlace de pago del tramo corto. */
+  urlCorto: string;
+  /** Enlace de pago del tramo largo. */
+  urlLargo: string;
   /** Frase lista para mostrar. */
   mensaje: string;
 }
@@ -134,20 +143,32 @@ export interface Tarifa {
  */
 export function tarifaPara(correo: string): Tarifa {
   if (esInstitucional(correo)) {
+    const corto = PRODUCTOS.audio1hEstudiante;
+    const largo = PRODUCTOS.audio4hEstudiante;
     return {
       institucional: true,
-      mxn: PRECIO_INSTITUCIONAL_MXN,
+      mxnCorto: corto.importeMxn,
+      mxnLargo: largo.importeMxn,
+      urlCorto: corto.url,
+      urlLargo: largo.url,
       mensaje:
-        `Tarifa institucional: ${PRECIO_INSTITUCIONAL_MXN} MXN por hasta ` +
-        `${HORAS_INCLUIDAS} horas de audio. Validamos el correo al ` +
-        `responderte.`,
+        `Tarifa institucional: ${corto.importeMxn} MXN por 1 hora de audio, ` +
+        `o ${largo.importeMxn} MXN por hasta ${HORAS_TRAMO_LARGO} horas ` +
+        `(${porHora(largo, HORAS_TRAMO_LARGO)} MXN la hora). Validamos el ` +
+        `correo al responderte.`,
     };
   }
+  const corto = PRODUCTOS.audio1hEmpresa;
+  const largo = PRODUCTOS.audio4hEmpresa;
   return {
     institucional: false,
-    mxn: PRECIO_GENERAL_MXN,
+    mxnCorto: corto.importeMxn,
+    mxnLargo: largo.importeMxn,
+    urlCorto: corto.url,
+    urlLargo: largo.url,
     mensaje:
-      `Con este correo aplica la tarifa general: ${PRECIO_GENERAL_MXN} MXN ` +
-      `por hasta ${HORAS_INCLUIDAS} horas. ${MENSAJE_NO_ESTA_EN_LA_LISTA}`,
+      `Con este correo aplica la tarifa general: ${corto.importeMxn} MXN ` +
+      `por 1 hora, o ${largo.importeMxn} MXN por hasta ` +
+      `${HORAS_TRAMO_LARGO} horas. ${MENSAJE_NO_ESTA_EN_LA_LISTA}`,
   };
 }
