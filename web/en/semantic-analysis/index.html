@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+
+  <title>Analysis with semantic reasoning graphs | AIDesk</title>
+  <meta name="description"
+        content="Book the first meeting to analyse your document with semantic reasoning graphs. 30 minutes for 20 USD, credited against the work if you hire us." />
+
+  <link rel="canonical" href="https://aidesk.aideatext.ai/en/semantic-analysis/" />
+
+  <link rel="alternate" hreflang="es" href="https://aidesk.aideatext.ai/analisissemantico/" />
+  <link rel="alternate" hreflang="en" href="https://aidesk.aideatext.ai/en/semantic-analysis/" />
+  <link rel="alternate" hreflang="x-default" href="https://aidesk.aideatext.ai/analisissemantico/" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Logo32x32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/img/Logo64x64.png" />
+  <link rel="apple-touch-icon" href="/img/Logo_300x300.png" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AIdeaText" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="es_MX" />
+  <meta property="og:url" content="https://aidesk.aideatext.ai/en/semantic-analysis/" />
+  <meta property="og:title" content="Analyse your document with semantic reasoning graphs" />
+  <meta property="og:description"
+        content="Book the first meeting. 30 minutes, credited against the work if you hire us." />
+  <meta property="og:image" content="https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg" />
+  <meta property="og:image:width" content="1920" />
+  <meta property="og:image:height" content="1080" />
+  <meta property="og:image:alt" content="AIdeaText" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Analyse your document with semantic reasoning graphs" />
+  <meta name="twitter:description"
+        content="Book the first meeting. 30 minutes, credited against the work if you hire us." />
+  <meta name="twitter:image" content="https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg" />
+  <meta name="twitter:image:alt" content="AIdeaText" />
+
+  <!-- ESTA RUTA TAMBIEN NECESITA LA CSP DE CALENDLY. La regla de
+       `staticwebapp.config.json` casa por ruta, no por pagina, asi que la
+       version en ingles vive bajo su propio patron
+       `/en/semantic-analysis*`. Sin esa segunda regla el calendario carga
+       en español y se queda en blanco en ingles — y nada en local lo
+       avisa, porque `vitest` no lee cabeceras HTTP. -->
+  <link rel="stylesheet" href="/css/interior.css" />
+</head>
+<body>
+
+  <header class="barra">
+    <span class="logos">
+      <img class="aideatext" src="/img/Logo_300x300.png" width="81" height="81"
+           alt="AIdeaText" />
+      <img class="nvidia" src="/img/nvidia-inception-color.svg" width="188" height="81"
+           alt="AIdeaText is a member of the NVIDIA Inception program" />
+    </span>
+    <h1>Document analysis with semantic reasoning graphs</h1>
+    <a class="volver" href="/en/">← Back to AIDesk</a>
+    <p class="idiomas">
+      <a href="/analisissemantico/" hreflang="es" lang="es">ES</a>
+      <span aria-current="true">EN</span>
+    </p>
+  </header>
+
+  <div class="intro">
+    <p class="datos">
+      Here we <strong>do read your document</strong>: there is no way to
+      advise you without reading it. We do not publish it, we do not share
+      it and we do not use it to train anything; we delete it when we
+      finish, or sooner if you ask. The detail is in
+      <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Data handling</a>.
+    </p>
+    <p class="precio">
+      <span class="cifra">30 min · 20 USD</span><br />
+      Credited against the work if you hire us.
+    </p>
+  </div>
+
+  <!-- El calendario COBRA, igual que en la version en español: Calendly
+       esta conectado a Stripe y la reserva no se cierra sin el pago. Por
+       eso aqui tampoco hay enlace de pago suelto — los dos juntos cobrarian
+       dos veces a quien pulsara el boton y despues reservara. -->
+  <div class="agenda">
+    <div class="calendly-inline-widget"
+         data-url="https://calendly.com/manuel-var-ale-aideatext/30min"></div>
+    <!-- Sin `integrity`: la URL de Calendly no lleva version y un hash
+         fijado romperia el calendario el dia que publiquen. Lo que acota
+         el riesgo es la CSP de esta ruta y que la pagina no toque ningun
+         archivo del usuario. -->
+    <script type="text/javascript"
+            src="https://assets.calendly.com/assets/external/widget.js"
+            async></script>
+  </div>
+
+  <footer>
+    <div class="fila">
+      <a href="/en/">AIDesk</a>
+      <a href="https://github.com/aideatext/aideatext-desk">Project code</a>
+      <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Data handling</a>
+      <a href="mailto:first.contact@aideatext.ai">first.contact@aideatext.ai</a>
+    </div>
+    <p class="marca">
+      © 2025 NVIDIA, the NVIDIA logo are trademarks and/or registered
+      trademarks of NVIDIA Corporation in the U.S. and other countries.
+    </p>
+  </footer>
+
+</body>
+</html>

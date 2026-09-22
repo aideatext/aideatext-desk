@@ -64,12 +64,13 @@ describe('la pagina no carga nada de fuera', () => {
       (m) => m[0]
     );
     const externos = recursos
-      // `rel="canonical"` se excluye porque NO CARGA NADA: es una
-      // declaracion, igual que `og:url`, y el navegador nunca la pide. Lo
-      // que esta prueba vigila es que la portada no descargue un recurso
-      // de un tercero —una tipografia, un script, una imagen—, y eso
-      // sigue vigilado: un `<link rel="stylesheet">` externo falla aqui.
-      .filter((t) => !/rel="canonical"/.test(t))
+      // `canonical` y `alternate` (los hreflang) se excluyen porque NO
+      // CARGAN NADA: son declaraciones, igual que `og:url`, y el navegador
+      // nunca las pide. Lo que esta prueba vigila es que la portada no
+      // descargue un recurso de un tercero —una tipografia, un script, una
+      // imagen—, y eso sigue vigilado: un `<link rel="stylesheet">`
+      // externo falla aqui, y la hoja propia pasa porque es relativa.
+      .filter((t) => !/rel="(?:canonical|alternate)"/.test(t))
       .filter((t) => /(?:src|href)="https?:/.test(t));
     expect(externos).toEqual([]);
   });

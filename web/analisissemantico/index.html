@@ -18,6 +18,14 @@
        sirvio la pagina, que es justo lo que hay que desambiguar. -->
   <link rel="canonical" href="https://aidesk.aideatext.ai/analisissemantico/" />
 
+  <!-- hreflang reciproco: cada version declara a la otra Y A SI MISMA.
+       Sin la autorreferencia, Google descarta el grupo entero. El
+       `x-default` apunta al español, que es el idioma del mercado
+       principal. -->
+  <link rel="alternate" hreflang="es" href="https://aidesk.aideatext.ai/analisissemantico/" />
+  <link rel="alternate" hreflang="en" href="https://aidesk.aideatext.ai/en/semantic-analysis/" />
+  <link rel="alternate" hreflang="x-default" href="https://aidesk.aideatext.ai/analisissemantico/" />
+
   <link rel="icon" type="image/png" sizes="32x32" href="/img/Logo32x32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="/img/Logo64x64.png" />
   <link rel="apple-touch-icon" href="/img/Logo_300x300.png" />
@@ -60,188 +68,7 @@
        comprobando en la pestaña Red. La excepcion es tolerable porque
        esta pagina no procesa ningun archivo — y hay una prueba que lo
        fija. -->
-  <style>
-    :root {
-      --tinta: #1a1a1a;
-      --tenue: #5b5b5b;
-      --linea: #d9d9d9;
-      --fondo: #ffffff;
-      --acento: #14532d;
-      --acento-suave: #eef5f0;
-      --duda: #6b4e00;
-      --duda-suave: #fdf6e3;
-    }
-
-    * { box-sizing: border-box; }
-    html { -webkit-text-size-adjust: 100%; }
-    html, body { height: 100%; }
-
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto,
-                   "Helvetica Neue", Arial, sans-serif;
-      color: var(--tinta);
-      background: var(--fondo);
-      font-size: clamp(14px, 0.9vh + 8px, 16.5px);
-      line-height: 1.45;
-      margin: 0;
-      padding: 0 clamp(.7rem, 1.8vw, 1.5rem);
-      display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr) auto;
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
-    }
-
-    .barra, .intro, .agenda, footer {
-      width: 100%;
-      max-width: 900px;
-      margin-inline: auto;
-    }
-
-    a { color: var(--acento); }
-
-    /* -- Encabezado -------------------------------------------- */
-
-    .barra {
-      display: flex;
-      align-items: center;
-      gap: .4rem 1.4rem;
-      flex-wrap: wrap;
-      padding: .55rem 0 .5rem;
-      border-bottom: 2px solid var(--linea);
-    }
-
-    .logos { display: flex; align-items: center; gap: 1rem; flex: none; }
-
-    .logos .aideatext {
-      width: clamp(46px, 8vh, 81px);
-      height: clamp(46px, 8vh, 81px);
-      display: block;
-    }
-
-    .logos .nvidia {
-      height: clamp(46px, 8vh, 81px);
-      width: auto;
-      display: block;
-    }
-
-    h1 {
-      font-size: clamp(.98rem, 1.5vw, 1.25rem);
-      line-height: 1.22;
-      letter-spacing: -.01em;
-      margin: 0;
-      flex: 1 1 18rem;
-      min-width: 0;
-    }
-
-    .volver {
-      font-size: .88rem;
-      font-weight: 600;
-      text-decoration: none;
-      flex: none;
-    }
-
-    .volver:hover { text-decoration: underline; }
-
-    /* -- La franja de contexto --------------------------------- */
-
-    .intro {
-      display: flex;
-      align-items: center;
-      gap: .5rem .9rem;
-      flex-wrap: wrap;
-      padding: .5rem 0 .45rem;
-    }
-
-    .intro p { margin: 0; font-size: .87rem; }
-
-    /* El aviso de que aqui SI leemos el documento. Ya no hay un boton de
-       pago debajo del que tenga que ir delante —el cobro lo hace
-       Calendly—, pero sigue teniendo que leerse ANTES de reservar, que es
-       la decision que este aviso puede cambiar. */
-    .datos {
-      flex: 1 1 26rem;
-      min-width: 0;
-      padding: .45rem .7rem;
-      border: 1px solid #e6d7a8;
-      border-radius: 9px;
-      background: var(--duda-suave);
-      color: var(--duda);
-    }
-
-    .datos a { color: var(--duda); }
-
-    .precio {
-      flex: none;
-      padding: .45rem .8rem;
-      border: 1px solid #c3ddcc;
-      border-radius: 9px;
-      background: var(--acento-suave);
-      color: var(--acento);
-    }
-
-    .precio .cifra { font-weight: 800; font-size: 1.15em; }
-
-    /* -- El calendario ----------------------------------------- */
-
-    /* La fila que crece. `min-height: 0` es lo que permite que la rejilla
-       la encoja en una pantalla baja en vez de empujar el pie fuera. */
-    .agenda {
-      min-height: 0;
-      padding-bottom: .4rem;
-      display: grid;
-    }
-
-    /* SIN alto fijo, al reves de lo que trae el fragmento de Calendly.
-       Su `height:700px` inline es lo que obligaba a la pagina a
-       desplazarse; aqui el contenedor toma el alto de su fila y el widget
-       se ajusta a el. */
-    .calendly-inline-widget {
-      min-width: 0;
-      height: 100%;
-      border: 1px solid var(--linea);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .calendly-inline-widget iframe { display: block; }
-
-    /* -- Pie --------------------------------------------------- */
-
-    footer {
-      border-top: 1px solid var(--linea);
-      padding: .3rem 0 .4rem;
-      font-size: .8rem;
-      color: var(--tenue);
-    }
-
-    footer .fila {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .1rem 1.1rem;
-    }
-
-    .marca { margin: .2rem 0 0; font-size: .72rem; }
-
-    /* ===== Pantalla estrecha o muy baja =====
-       Aqui la rejilla sin scroll deja de tener sentido: el calendario de
-       Calendly necesita sitio, y apretarlo a 200px no lo hace usable, lo
-       hace inservible. Se permite el desplazamiento y se le devuelve al
-       widget un alto de trabajo. */
-    @media (max-width: 700px), (max-height: 620px) {
-      body {
-        display: block;
-        height: auto;
-        overflow: visible;
-        font-size: 16px;
-        padding-bottom: 1.4rem;
-      }
-      .calendly-inline-widget { height: 680px; }
-      .logos .aideatext { width: 54px; height: 54px; }
-      .logos .nvidia { height: 54px; }
-      .volver { margin-left: auto; }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/interior.css" />
 </head>
 <body>
 
@@ -254,6 +81,13 @@
     </span>
     <h1>Asesoría para el análisis de documentos con grafos de razonamiento semántico</h1>
     <a class="volver" href="/">← Volver a AIDesk</a>
+    <!-- Selector de idioma. Enlaza a la pagina EQUIVALENTE, no a la
+         portada del otro idioma: cambiar de idioma no puede costarte el
+         sitio donde estabas. El activo no es un enlace. -->
+    <p class="idiomas">
+      <span aria-current="true">ES</span>
+      <a href="/en/semantic-analysis/" hreflang="en" lang="en">EN</a>
+    </p>
   </header>
 
   <div class="intro">

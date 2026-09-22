@@ -1,0 +1,213 @@
+/* ─────────────────────────────────────────────────────────────────────
+   Paginas interiores — cabecera, aviso y el marco del calendario
+
+   EXTRAIDO DE LOS HTML, y no por estetica. El sitio pasa a tener version
+   en ingles: con el CSS incrustado habria cuatro copias de este archivo
+   que se desincronizan al primer retoque. Servido desde el propio origen,
+   asi que `style-src 'self'` de la CSP lo permite sin tocar la politica y
+   sin romper la promesa de que la portada no carga nada de terceros.
+   ───────────────────────────────────────────────────────────────────── */
+
+:root {
+  --tinta: #1a1a1a;
+  --tenue: #5b5b5b;
+  --linea: #d9d9d9;
+  --fondo: #ffffff;
+  --acento: #14532d;
+  --acento-suave: #eef5f0;
+  --duda: #6b4e00;
+  --duda-suave: #fdf6e3;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+html, body { height: 100%; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  color: var(--tinta);
+  background: var(--fondo);
+  font-size: clamp(14px, 0.9vh + 8px, 16.5px);
+  line-height: 1.45;
+  margin: 0;
+  padding: 0 clamp(.7rem, 1.8vw, 1.5rem);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.barra, .intro, .agenda, footer {
+  width: 100%;
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+a { color: var(--acento); }
+
+/* -- Encabezado -------------------------------------------- */
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: .4rem 1.4rem;
+  flex-wrap: wrap;
+  padding: .55rem 0 .5rem;
+  border-bottom: 2px solid var(--linea);
+}
+
+.logos { display: flex; align-items: center; gap: 1rem; flex: none; }
+
+.logos .aideatext {
+  width: clamp(46px, 8vh, 81px);
+  height: clamp(46px, 8vh, 81px);
+  display: block;
+}
+
+.logos .nvidia {
+  height: clamp(46px, 8vh, 81px);
+  width: auto;
+  display: block;
+}
+
+h1 {
+  font-size: clamp(.98rem, 1.5vw, 1.25rem);
+  line-height: 1.22;
+  letter-spacing: -.01em;
+  margin: 0;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.volver {
+  font-size: .88rem;
+  font-weight: 600;
+  text-decoration: none;
+  flex: none;
+}
+
+.volver:hover { text-decoration: underline; }
+
+/* -- La franja de contexto --------------------------------- */
+
+.intro {
+  display: flex;
+  align-items: center;
+  gap: .5rem .9rem;
+  flex-wrap: wrap;
+  padding: .5rem 0 .45rem;
+}
+
+.intro p { margin: 0; font-size: .87rem; }
+
+/* El aviso de que aqui SI leemos el documento. Ya no hay un boton de
+   pago debajo del que tenga que ir delante —el cobro lo hace
+   Calendly—, pero sigue teniendo que leerse ANTES de reservar, que es
+   la decision que este aviso puede cambiar. */
+.datos {
+  flex: 1 1 26rem;
+  min-width: 0;
+  padding: .45rem .7rem;
+  border: 1px solid #e6d7a8;
+  border-radius: 9px;
+  background: var(--duda-suave);
+  color: var(--duda);
+}
+
+.datos a { color: var(--duda); }
+
+.precio {
+  flex: none;
+  padding: .45rem .8rem;
+  border: 1px solid #c3ddcc;
+  border-radius: 9px;
+  background: var(--acento-suave);
+  color: var(--acento);
+}
+
+.precio .cifra { font-weight: 800; font-size: 1.15em; }
+
+/* -- El calendario ----------------------------------------- */
+
+/* La fila que crece. `min-height: 0` es lo que permite que la rejilla
+   la encoja en una pantalla baja en vez de empujar el pie fuera. */
+.agenda {
+  min-height: 0;
+  padding-bottom: .4rem;
+  display: grid;
+}
+
+/* SIN alto fijo, al reves de lo que trae el fragmento de Calendly.
+   Su `height:700px` inline es lo que obligaba a la pagina a
+   desplazarse; aqui el contenedor toma el alto de su fila y el widget
+   se ajusta a el. */
+.calendly-inline-widget {
+  min-width: 0;
+  height: 100%;
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.calendly-inline-widget iframe { display: block; }
+
+/* -- Pie --------------------------------------------------- */
+
+footer {
+  border-top: 1px solid var(--linea);
+  padding: .3rem 0 .4rem;
+  font-size: .8rem;
+  color: var(--tenue);
+}
+
+footer .fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .1rem 1.1rem;
+}
+
+.marca { margin: .2rem 0 0; font-size: .72rem; }
+
+/* ===== Pantalla estrecha o muy baja =====
+   Aqui la rejilla sin scroll deja de tener sentido: el calendario de
+   Calendly necesita sitio, y apretarlo a 200px no lo hace usable, lo
+   hace inservible. Se permite el desplazamiento y se le devuelve al
+   widget un alto de trabajo. */
+@media (max-width: 700px), (max-height: 620px) {
+  body {
+    display: block;
+    height: auto;
+    overflow: visible;
+    font-size: 16px;
+    padding-bottom: 1.4rem;
+  }
+  .calendly-inline-widget { height: 680px; }
+  .logos .aideatext { width: 54px; height: 54px; }
+  .logos .nvidia { height: 54px; }
+  .volver { margin-left: auto; }
+}
+
+/* ── Selector de idioma ──────────────────────────────────────────────
+   Mismo criterio que en la portada: enlaces planos, cada pagina al
+   equivalente en el otro idioma, y el activo sin enlazar. */
+.idiomas {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  flex: none;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.idiomas a,
+.idiomas span {
+  padding: .15rem .4rem;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.idiomas a { color: var(--acento); }
+.idiomas a:hover { background: var(--acento-suave); }
+.idiomas [aria-current] { background: var(--acento); color: #fff; }

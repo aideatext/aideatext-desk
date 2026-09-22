@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+
+  <title>AIDesk — Feed your documents to AI whole, without uploading them anywhere</title>
+  <meta name="description"
+        content="AIDesk turns any PDF — thesis, report, case file, manual — into a text file (.md) that ChatGPT, Claude or Gemini read in full. The conversion happens in your browser: the file is never uploaded to any server, and you can verify that yourself." />
+
+  <link rel="canonical" href="https://aidesk.aideatext.ai/en/" />
+
+  <!-- hreflang reciproco: cada version declara a la otra Y A SI MISMA.
+       Sin la autorreferencia, Google descarta el grupo entero. El
+       `x-default` apunta al español, que es el idioma del mercado
+       principal. -->
+  <link rel="alternate" hreflang="es" href="https://aidesk.aideatext.ai/" />
+  <link rel="alternate" hreflang="en" href="https://aidesk.aideatext.ai/en/" />
+  <link rel="alternate" hreflang="x-default" href="https://aidesk.aideatext.ai/" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Logo32x32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/img/Logo64x64.png" />
+  <link rel="apple-touch-icon" href="/img/Logo_300x300.png" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AIdeaText" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="es_MX" />
+  <meta property="og:url" content="https://aidesk.aideatext.ai/en/" />
+  <meta property="og:title" content="Feed your documents to AI whole, without uploading them anywhere" />
+  <meta property="og:description"
+        content="AIDesk turns any PDF into a .md file that ChatGPT, Claude or Gemini read in full. It happens in your browser: nothing is uploaded, and we show you live." />
+  <meta property="og:image" content="https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg" />
+  <meta property="og:image:width" content="1920" />
+  <meta property="og:image:height" content="1080" />
+  <meta property="og:image:alt" content="AIdeaText" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Feed your documents to AI whole, without uploading them anywhere" />
+  <meta name="twitter:description"
+        content="AIDesk turns any PDF into a .md file that ChatGPT, Claude or Gemini read in full. It happens in your browser: nothing is uploaded." />
+  <meta name="twitter:image" content="https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg" />
+  <meta name="twitter:image:alt" content="AIdeaText" />
+
+  <!-- La MISMA hoja que la portada en español. Ese es el motivo de
+       haberla sacado de los HTML: dos idiomas con el CSS incrustado son
+       dos copias que se desincronizan al primer retoque. -->
+  <link rel="stylesheet" href="/css/portada.css" />
+</head>
+<body>
+
+  <header class="barra">
+    <span class="logos">
+      <img class="aideatext" src="/img/Logo_300x300.png" width="81" height="81"
+           alt="AIdeaText" />
+      <img class="nvidia" src="/img/nvidia-inception-color.svg" width="188" height="81"
+           alt="AIdeaText is a member of the NVIDIA Inception program" />
+    </span>
+
+    <h1 class="titulo">
+      <span class="nombre">AIDesk</span><span class="frase">, the format workshop for your documents.</span>
+    </h1>
+
+    <!-- El selector va en la PRIMERA FILA, detras del titulo, y no
+         debajo del lema: `.lema` ocupa el 100% del ancho y empuja a la
+         siguiente linea todo lo que venga despues. Ahi el selector se
+         llevaba una fila entera para dos palabras, y esos ~30px salian
+         del alto de la seccion 4, que se quedaba con el boton cortado. -->
+    <p class="idiomas">
+      <a href="/" hreflang="es" lang="es">ES</a>
+      <span aria-current="true">EN</span>
+    </p>
+
+    <p class="lema">
+      The digital format lab for producing your content
+    </p>
+
+  </header>
+
+  <main class="columnas">
+
+    <!-- ===== 1. PDF to Markdown: the tool that actually exists ===== -->
+    <div class="col">
+      <h2>
+        <span class="paso">1</span> PDF → Markdown
+        <span class="gratis">free and complete</span>
+      </h2>
+
+      <p>
+        Your document —thesis, report, case file, manual— in a file that
+        ChatGPT, Claude or Gemini read <strong>whole and properly
+        structured</strong>, with headings, lists and tables where they
+        belong. Free, no page cap, and it never leaves your browser.
+      </p>
+
+      <details class="porque">
+        <summary>Why convert it instead of pasting the PDF?</summary>
+        <div class="plegado">
+          <p>
+            A PDF describes how a page <em>looks</em> —the position of every
+            character, the font, the coordinates—, not the logical structure
+            of its content; Markdown does preserve the hierarchy: headings,
+            lists, tables, emphasis. That makes the content processable, not
+            merely visible. A badly extracted PDF arrives with absurd line
+            breaks, columns jumbled together, repeated headers and footers
+            and text in the wrong order, and that degrades the quality of
+            any analysis you run afterwards with ChatGPT, Claude or Gemini.
+            It is a quality problem, not a size problem.
+          </p>
+        </div>
+      </details>
+
+      <div id="zona">
+        <p><strong>Drop your PDF here</strong>, or click to choose it</p>
+        <p class="formatos">
+          The <strong>whole</strong> document, no page limit and no sign-up.
+          It is converted in this very tab and never reaches a server:
+          check it yourself under «Security», below.
+        </p>
+        <input type="file" id="archivo" accept="application/pdf" hidden />
+      </div>
+
+      <div class="ocr-oferta">
+        <p class="condicion">
+          Is it a <strong>scan</strong> —a photo of each page—? Then there
+          is no text to extract: it needs OCR, which runs on a server and
+          <strong>does receive your file</strong>. Drop it above and we tell
+          you for free whether it is scanned; and ask for a sample page,
+          also free, before paying.
+        </p>
+        <p class="comprar">
+          <a class="boton" href="https://buy.stripe.com/5kQ4gz65tdmq6jE0Yz5c407">
+            Student<br /><span class="importe">200 MXN</span>
+          </a>
+          <a class="boton secundario" href="https://buy.stripe.com/fZu5kDgK7aae9vQbDd5c404">
+            Company<br /><span class="importe">500 MXN</span>
+          </a>
+        </p>
+      </div>
+
+      <div id="resultado"></div>
+      <div id="ahorro"></div>
+    </div>
+
+    <!-- ===== 2. Markdown to audio: not built yet ===== -->
+    <div class="col">
+      <h2>
+        <span class="paso">2</span> Markdown → Audio (MP3)
+        <span class="pronto">under construction</span>
+      </h2>
+
+      <p>
+        One to two hours commuting each way. Reading on the subway is
+        awkward; listening is not. Listen to this week's thesis, report,
+        contract or chapter.
+      </p>
+
+      <p class="condicion">
+        <strong>Students and non-profits</strong> pay half, with a
+        validated institutional email. <strong>Companies and
+        professionals</strong>, the rate alongside. Done by hand: once you
+        pay we write about your file and timing.
+      </p>
+
+      <div class="tarifa">
+        <label for="correo-audio">Does your email qualify? Type it:</label>
+        <input type="email" id="correo-audio" class="correo-tarifa"
+               autocomplete="email" spellcheck="false"
+               placeholder="you@comunidad.unam.mx" />
+        <p class="tarifa-veredicto" role="status"></p>
+      </div>
+
+      <p class="comprar">
+        <a class="boton" href="https://buy.stripe.com/bJeaEX0L9fuy8rM36H5c402">
+          Student · 1 h<br /><span class="importe">200 MXN</span>
+        </a>
+        <a class="boton" href="https://buy.stripe.com/bJeaEX2Th6Y28rM5eP5c403">
+          Student · 4 h<br /><span class="importe">500 MXN</span>
+          <span class="unitario">125 MXN per hour</span>
+        </a>
+        <a class="boton secundario" href="https://buy.stripe.com/3cI3cv1Pdcim37s8r15c400">
+          Company · 1 h<br /><span class="importe">400 MXN</span>
+        </a>
+        <a class="boton secundario" href="https://buy.stripe.com/8x2cN579x2HM37sgXx5c401">
+          Company · 4 h<br /><span class="importe">800 MXN</span>
+          <span class="unitario">200 MXN per hour</span>
+        </a>
+      </p>
+    </div>
+
+    <!-- ===== 3. Translation in audio: not built yet ===== -->
+    <div class="col">
+      <h2>
+        <span class="paso">3</span> ES ↔ EN translation in audio
+        <span class="pronto">under construction</span>
+      </h2>
+
+      <p>
+        You have to present in English what you wrote in Spanish —a talk, a
+        proposal, a report—; or the other way round, what you have to read
+        is in English and you understand it far better listening to it in
+        Spanish. We translate it and hand you the audio in the other
+        language.
+      </p>
+
+      <p class="condicion">
+        We have no set price for this service yet. We will publish one when
+        we can charge for it, not before.
+      </p>
+
+      <p>
+        Tell us what you need translated and we will let you know as soon as
+        it exists —price included. What you write here is, literally, what
+        decides what we build first.
+      </p>
+
+      <a class="boton"
+         href="mailto:first.contact@aideatext.ai?subject=Waiting%20list%3A%20ES-EN%20translation%20in%20audio&amp;body=Hello%3A%0A%0APlease%20let%20me%20know%20when%20the%20Spanish-English%20audio%20translation%20service%20is%20ready.%0A%0AWhat%20I%20need%20translated%20%28talk%2C%20article%2C%20reading%20list%29%3A%0ADirection%20%28ES%20to%20EN%2C%20or%20EN%20to%20ES%29%3A%0AApproximate%20length%3A%0AMy%20institutional%20email%20%28if%20any%29%3A%0A">
+        Let me know when it is ready
+      </a>
+
+      <p class="apunte">
+        This opens your mail client with the message written. There is no
+        form, no server, and we store nothing here.
+      </p>
+    </div>
+
+  </main>
+
+  <section class="banda">
+    <div class="banda-cabecera">
+      <h2>
+        <span class="paso">4</span> Document analysis with
+        <strong>semantic reasoning graphs</strong>
+        <span class="humano">done by a person</span>
+      </h2>
+      <p class="argumento">
+        Your document is drawn as a graph, and the <em>shape</em> of the
+        drawing is the reasoning holding it together. It is the
+        <a href="https://aideatext.ai">AIdeaText</a> technique, and here you
+        learn to read it on your own text.
+      </p>
+      <p>
+        That means we <strong>do read what you wrote</strong>: the three
+        columns above never touch your file; this one does. In one or
+        several sessions we cover:
+      </p>
+    </div>
+
+    <div class="preguntas">
+      <div>
+        <h3>What reasoning holds your argument together?</h3>
+        <p>
+          You see it in the shape. A <strong>star</strong> is deductive: one
+          concept holds up the rest. A <strong>funnel</strong> is inductive:
+          loose cases at the bottom that a few ideas gather at the top.
+          <strong>Crowns</strong>, abductive: the concepts the explanation
+          passes through. <strong>Two lobes</strong>, analogical: two
+          developments in parallel and the lines crossing between them.
+        </p>
+      </div>
+      <div>
+        <h3>Which concept carries the most weight?</h3>
+        <p>
+          Colour tells you: it measures <strong>how many other concepts it
+          connects to</strong>, and that is the weight that matters in an
+          argument. Careful with size: size is <strong>frequency</strong>,
+          not importance —a repeated filler word comes out large—.
+        </p>
+      </div>
+      <div>
+        <h3>Is every concept connected?</h3>
+        <p>
+          Islands are visible at a glance. Distance from the centre is not
+          decorative: it is how many steps each concept sits from the core.
+          A concept nobody touches is an idea you stated and never wove in.
+        </p>
+      </div>
+    </div>
+
+    <div class="banda-pie">
+      <p>
+        <strong>What sets it apart:</strong> the graph is not laid out by a
+        simulation, so a concept <strong>only moves when what it measures
+        changes</strong> —compare two drafts and the movement is the
+        diagnosis—. It does not say whether the reasoning is sound: it says
+        how it is built.
+      </p>
+      <a class="boton" href="/en/semantic-analysis/">
+        Book your meeting · 30 min
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="fila">
+      <details>
+        <summary>How it works</summary>
+        <div class="plegado">
+          <p>
+            Your PDF is opened with PDF.js inside your browser. AIDesk walks
+            every page, measures how much extractable text it has and
+            decides whether it is text, a scan or a blank page. With the
+            text pages it assembles a Markdown file with one heading per
+            page and hands it to you as a local download. There is no server
+            anywhere in that path: no request uploads your file. The whole
+            document is converted; there is no page cap.
+          </p>
+          <p>
+            The measurement box compares the characters of the text
+            extracted from the PDF —layout noise included— against those of
+            the Markdown produced, estimating one token per 4 characters. It
+            is the result for your file, not an average or a promise. The
+            Markdown often comes out <em>the same size or slightly
+            larger</em>, and the screen says so in those words: what you gain
+            here is structure, not token savings.
+          </p>
+          <p>
+            Columns 2 and 3 are not built yet. Their prices are settled and
+            published here; the button only opens an email.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Security</summary>
+        <div class="plegado">
+          <h3>It uploads nothing</h3>
+          <p>
+            We do not receive your document, and we could not even if we
+            wanted to: this site declares a security policy
+            (<code>connect-src 'self'</code>) that forbids the browser from
+            sending data to any other server.
+          </p>
+
+          <p>Do not take our word for it. Check:</p>
+
+          <button id="probar-csp" type="button">
+            Try to send data to an external server
+          </button>
+
+          <div id="resultado-csp"></div>
+
+          <h3>How to check it yourself</h3>
+          <ol>
+            <li>
+              Open the developer tools (F12), go to the
+              <strong>Network</strong> tab and convert a PDF. You will not
+              see a single upload request.
+            </li>
+            <li>
+              Press the button above: we will try to send data to an
+              external server in front of you, and you will watch the
+              browser stop it. The violation is written to your console by
+              the browser, not by us.
+            </li>
+          </ol>
+        </div>
+      </details>
+
+      <details>
+        <summary>Who is behind this</summary>
+        <div class="plegado">
+          <p>
+            <strong>Manuel Vargas Alegría</strong> — Master's degree from
+            ESAN. Former national administrator of SIAGIE in Peru, the
+            education information system serving 7 million students and
+            95,000 institutions. Founder of AIdeaText, a semantic analysis
+            platform for academic writing, with a pilot at Universidad
+            Femenina del Sagrado Corazón (UNIFE) and participation in the
+            NVIDIA Inception and AWS Startups programmes.
+          </p>
+          <p>
+            AIDesk came out of a simple observation: someone writing
+            something not yet published —a thesis, an expert report, a
+            proposal, a case file— does not need another AI tool. They need
+            their work not to end up on a stranger's server.
+          </p>
+          <p>
+            <a href="mailto:mv@aideatext.com">mv@aideatext.com</a> ·
+            <a href="https://aideatext.ai">AIdeaText</a>
+          </p>
+        </div>
+      </details>
+
+      <a class="asesoria" href="/en/semantic-analysis/">Semantic analysis</a>
+      <a href="https://github.com/aideatext/aideatext-desk">Project code</a>
+      <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Data handling</a>
+      <a class="correo" href="mailto:first.contact@aideatext.ai">first.contact@aideatext.ai</a>
+    </div>
+
+    <p class="marca">© 2025 NVIDIA, the NVIDIA logo are trademarks and/or registered trademarks of NVIDIA Corporation in the U.S. and other countries.</p>
+  </footer>
+
+  <script type="module" src="/src/main.ts"></script>
+  <script type="module" src="/src/autocomprobacion.entry.ts"></script>
+  <script type="module" src="/src/listaDeEspera.entry.ts"></script>
+</body>
+</html>

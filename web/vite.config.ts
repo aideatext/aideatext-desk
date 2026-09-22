@@ -15,8 +15,10 @@ export default defineConfig({
     // una regla de reescritura en `staticwebapp.config.json`.
     rollupOptions: {
       input: {
-        portada: 'index.html',
-        asesoria: 'analisissemantico/index.html',
+        portadaEs: 'index.html',
+        analisisEs: 'analisissemantico/index.html',
+        portadaEn: 'en/index.html',
+        analisisEn: 'en/semantic-analysis/index.html',
       },
     },
   },
