@@ -7,6 +7,11 @@
   "routes": [
     {
       "route": "/asesoriatesis*",
+      "redirect": "/analisissemantico/",
+      "statusCode": 301
+    },
+    {
+      "route": "/analisissemantico*",
       "headers": {
         "Content-Security-Policy": "default-src 'self'; script-src 'self' https://assets.calendly.com; style-src 'self' 'unsafe-inline' https://assets.calendly.com; img-src 'self' data: https://*.calendly.com; connect-src 'self' https://calendly.com https://*.calendly.com; frame-src https://calendly.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
       }

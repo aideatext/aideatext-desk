@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
  * La CSP es el producto, no un detalle de configuración: la portada
  * promete que tu archivo no sale del navegador y esa promesa la impone el
  * navegador, no nuestro código. Embeber Calendly obligó a abrirla — pero
- * SOLO en `/asesoriatesis`, que es la única página que no procesa ningún
+ * SOLO en `/analisissemantico`, que es la única página que no procesa ningún
  * archivo.
  *
  * Estas pruebas existen porque la forma natural de "arreglar" un widget
@@ -12,10 +12,10 @@ import { describe, it, expect } from 'vitest';
  */
 import config from '../public/staticwebapp.config.json';
 import portada from '../index.html?raw';
-import asesoria from '../asesoriatesis/index.html?raw';
+import asesoria from '../analisissemantico/index.html?raw';
 
 const global = config.globalHeaders['Content-Security-Policy'];
-const rutaAsesoria = config.routes.find((r) => r.route === '/asesoriatesis*');
+const rutaAsesoria = config.routes.find((r) => r.route === '/analisissemantico*');
 
 const directiva = (csp: string, nombre: string): string => {
   const m = csp.match(new RegExp(`(?:^|;)\\s*${nombre}\\s+([^;]*)`));
@@ -49,16 +49,16 @@ describe('la política global', () => {
   });
 });
 
-describe('la excepción de /asesoriatesis', () => {
+describe('la excepción de /analisissemantico', () => {
   it('existe como ruta propia', () => {
     expect(rutaAsesoria).toBeDefined();
   });
 
-  // `/asesoriatesis/*` NO casaria con `/asesoriatesis` sin barra: la
+  // `/analisissemantico/*` NO casaria con `/analisissemantico` sin barra: la
   // documentación de Azure lo dice explícitamente. El comodín va pegado
   // al nombre, y las dos URLs existen y responden 200.
   it('usa el comodín que sí cubre la ruta sin barra final', () => {
-    expect(rutaAsesoria?.route).toBe('/asesoriatesis*');
+    expect(rutaAsesoria?.route).toBe('/analisissemantico*');
   });
 
   it('abre exactamente lo que Calendly necesita, y nada más', () => {

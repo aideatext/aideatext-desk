@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
  * documento del cliente. Todo lo que esta página promete se lee en el HTML
  * servido, así que se comprueba sobre el HTML servido.
  */
-import html from '../asesoriatesis/index.html?raw';
+import html from '../analisissemantico/index.html?raw';
 import portada from '../index.html?raw';
 
 const marcado = html
@@ -161,7 +161,7 @@ describe('la portada enlaza a la asesoría', () => {
   // este es el único servicio que el dueño entrega en persona.
   it('lleva el enlace en el pie', () => {
     const pie = portada.match(/<footer>([\s\S]*?)<\/footer>/)?.[1] ?? '';
-    expect(pie).toContain('/asesoriatesis/');
+    expect(pie).toContain('/analisissemantico/');
   });
 
   const banda = () =>
@@ -170,7 +170,7 @@ describe('la portada enlaza a la asesoría', () => {
   const prosaBanda = () => banda().replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
   it('la anuncia en una franja bajo las tres columnas', () => {
-    expect(banda()).toContain('/asesoriatesis/');
+    expect(banda()).toContain('/analisissemantico/');
     expect(banda()).toMatch(/Asesoría/);
     expect(prosaBanda()).toMatch(
       /análisis de documentos con grafos de razonamiento semántico/
@@ -243,12 +243,12 @@ describe('la portada enlaza a la asesoría', () => {
 
   // LA PRUEBA QUE IMPORTA DE LA FRANJA. El enlace de pago existe y
   // ponerlo aquí sería un clic menos, pero toda la advertencia de que en
-  // este servicio SÍ leemos los documentos vive en `/asesoriatesis`.
+  // este servicio SÍ leemos los documentos vive en `/analisissemantico`.
   // Cobrar desde la portada se saltaría lo único que podría hacer que
   // alguien cambie de idea.
   it('la franja lleva a la página, NO al checkout', () => {
     expect(banda()).not.toContain('buy.stripe.com');
-    expect(banda()).toContain('/asesoriatesis/');
+    expect(banda()).toContain('/analisissemantico/');
   });
 
   // Y aun así la franja tiene que decirlo, porque hay quien pulsa sin
@@ -270,7 +270,7 @@ describe('la portada enlaza a la asesoría', () => {
     ].map((m) => m[1]);
     expect(columnas).toHaveLength(3);
     for (const col of columnas) {
-      expect(col).not.toContain('/asesoriatesis');
+      expect(col).not.toContain('/analisissemantico');
     }
   });
 });

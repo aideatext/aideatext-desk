@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
  * `readFileSync` aqui rompe `tsc --noEmit` y con el `npm run build`.
  */
 import html from '../index.html?raw';
-import asesoria from '../asesoriatesis/index.html?raw';
+import asesoria from '../analisissemantico/index.html?raw';
 
 const contenidoDe = (patron: RegExp): string | null =>
   html.match(patron)?.[1] ?? null;
@@ -87,7 +87,7 @@ describe('el dominio canónico', () => {
   it('las dos páginas declaran su canónico en aidesk', () => {
     expect(canonicoDe(html)).toBe('https://aidesk.aideatext.ai/');
     expect(canonicoDe(asesoria)).toBe(
-      'https://aidesk.aideatext.ai/asesoriatesis/'
+      'https://aidesk.aideatext.ai/analisissemantico/'
     );
   });
 

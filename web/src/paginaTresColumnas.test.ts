@@ -336,7 +336,7 @@ describe('encabezado y pie', () => {
     for (const alto of altos) expect(alto).toBeGreaterThanOrEqual(56);
   });
 
-  it('lleva AIDesk con su frase y su pertenencia al ecosistema', () => {
+  it('lleva AIDesk con su frase y su lema', () => {
     const barra = html.match(/<header class="barra">([\s\S]*?)<\/header>/)?.[1] ?? '';
     expect(barra).toContain('>AIDesk<');
     // `\s*` entre las dos mitades porque el nombre y la frase viven en
@@ -346,7 +346,7 @@ describe('encabezado y pie', () => {
       /AIDesk\s*, el taller de formatos de tus documentos\./
     );
     expect(prosa(barra)).toMatch(
-      /Una micro solución del ecosistema de\s*AIdeaText/
+      /El laboratorio de formatos digitales para la producción de tus\s*contenidos/
     );
   });
 
