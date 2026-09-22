@@ -24,6 +24,7 @@
  */
 
 import { PRODUCTOS, porHora } from './pagos';
+import { textos, type Textos } from '../textos';
 
 /**
  * Sufijos con tarifa institucional. Se guardan sin punto inicial; el
@@ -66,8 +67,7 @@ export const CONTACTO = 'first.contact@aideatext.ai';
  * nuestra, no suya, y cada correo que llega por aquí le dice al dueño del
  * producto qué institución añadir.
  */
-export const MENSAJE_NO_ESTA_EN_LA_LISTA =
-  `¿Tu institución no aparece? Escríbenos a ${CONTACTO} y la agregamos.`;
+export const MENSAJE_NO_ESTA_EN_LA_LISTA = textos().tarifa.noEstaEnLaLista;
 
 /**
  * Extrae el dominio normalizado de un correo, o `null` si no lo parece.
@@ -141,7 +141,7 @@ export interface Tarifa {
  * inserta con `textContent`, no con `innerHTML`. Lo que escribe el
  * usuario nunca vuelve a la página como HTML.
  */
-export function tarifaPara(correo: string): Tarifa {
+export function tarifaPara(correo: string, t: Textos = textos()): Tarifa {
   if (esInstitucional(correo)) {
     const corto = PRODUCTOS.audio1hEstudiante;
     const largo = PRODUCTOS.audio4hEstudiante;
@@ -151,11 +151,12 @@ export function tarifaPara(correo: string): Tarifa {
       mxnLargo: largo.importeMxn,
       urlCorto: corto.url,
       urlLargo: largo.url,
-      mensaje:
-        `Tarifa institucional: ${corto.importeMxn} MXN por 1 hora de audio, ` +
-        `o ${largo.importeMxn} MXN por hasta ${HORAS_TRAMO_LARGO} horas ` +
-        `(${porHora(largo, HORAS_TRAMO_LARGO)} MXN la hora). Validamos el ` +
-        `correo al responderte.`,
+      mensaje: t.tarifa.institucional(
+        corto.importeMxn,
+        largo.importeMxn,
+        HORAS_TRAMO_LARGO,
+        porHora(largo, HORAS_TRAMO_LARGO)
+      ),
     };
   }
   const corto = PRODUCTOS.audio1hEmpresa;
@@ -166,9 +167,11 @@ export function tarifaPara(correo: string): Tarifa {
     mxnLargo: largo.importeMxn,
     urlCorto: corto.url,
     urlLargo: largo.url,
+    // La salida para quien no esta en la lista va SIEMPRE pegada a la
+    // tarifa general: es la regla de no decir nunca «no se puede».
     mensaje:
-      `Con este correo aplica la tarifa general: ${corto.importeMxn} MXN ` +
-      `por 1 hora, o ${largo.importeMxn} MXN por hasta ` +
-      `${HORAS_TRAMO_LARGO} horas. ${MENSAJE_NO_ESTA_EN_LA_LISTA}`,
+      t.tarifa.general(corto.importeMxn, largo.importeMxn, HORAS_TRAMO_LARGO) +
+      ' ' +
+      t.tarifa.noEstaEnLaLista,
   };
 }

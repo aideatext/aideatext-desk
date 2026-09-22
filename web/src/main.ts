@@ -5,6 +5,7 @@ import { pdfToMarkdown } from './pdf/toMarkdown';
 import { extraerTextoCrudo } from './pdf/textoCrudo';
 import { renderDiagnosis } from './ui/report';
 import { renderAhorro } from './ui/tokens';
+import { textos } from './textos';
 
 // El worker se sirve desde nuestro propio dominio, no desde un CDN:
 // una peticion externa contradiria la garantia de "nada sale de aqui".
@@ -52,7 +53,7 @@ input.addEventListener('change', () => {
 });
 
 async function procesar(file: File): Promise<void> {
-  salida.innerHTML = '<p>Analizando en tu navegador…</p>';
+  salida.innerHTML = `<p>${textos().conversion.analizando}</p>`;
   // Se limpia SIEMPRE al empezar: si no, el ahorro medido sobre el archivo
   // anterior se quedaria en pantalla junto al diagnostico del nuevo, que es
   // la peor forma posible de equivocarse con un numero que el usuario va a
@@ -91,21 +92,18 @@ async function procesar(file: File): Promise<void> {
           descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
           await mostrarAhorro(data, r.markdown, r.pagesScanned.length);
         } catch {
+          const t = textos();
           salida.innerHTML = `
-            <p>Algo falló al convertir este documento.</p>
-            <p>Escríbenos a
-               <a href="mailto:first.contact@aideatext.ai">first.contact@aideatext.ai</a>
-               y lo revisamos contigo.</p>`;
+            <p>${t.conversion.falloAlConvertir}</p>
+            <p>${t.conversion.escribenosYRevisamos}</p>`;
         }
       });
     }
   } catch {
+    const t = textos();
     salida.innerHTML = `
-      <p>No pudimos leer este archivo. Puede estar protegido con contraseña
-         o dañado.</p>
-      <p>Escríbenos a
-         <a href="mailto:first.contact@aideatext.ai">first.contact@aideatext.ai</a>
-         y lo revisamos.</p>`;
+      <p>${t.conversion.noSePudoLeer}</p>
+      <p>${t.conversion.escribenosYRevisamos}</p>`;
   }
 }
 
@@ -127,7 +125,7 @@ async function mostrarAhorro(
   paginasEscaneadas: number
 ): Promise<void> {
   if (!salidaAhorro) return;
-  salidaAhorro.innerHTML = '<p class="apunte">Midiendo el ahorro…</p>';
+  salidaAhorro.innerHTML = `<p class="apunte">${textos().conversion.midiendo}</p>`;
   try {
     const crudo = await extraerTextoCrudo(data);
     salidaAhorro.innerHTML = renderAhorro({
@@ -137,9 +135,7 @@ async function mostrarAhorro(
     });
   } catch {
     salidaAhorro.innerHTML = `
-      <p class="apunte">Tu Markdown ya se descargó. No pudimos medir el
-         ahorro de tokens de este archivo, y preferimos decírtelo a
-         enseñarte un número inventado.</p>`;
+      <p class="apunte">${textos().conversion.noSePudoMedir}</p>`;
   }
 }
 

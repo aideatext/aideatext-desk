@@ -1,3 +1,5 @@
+import { textos, type Textos } from '../textos';
+
 /**
  * Medición del ahorro de tokens.
  *
@@ -84,43 +86,38 @@ export function porcentajeAhorrado(m: MedidaDeAhorro): number {
 }
 
 /** HTML del recuadro de ahorro, con las tres ramas escritas enteras. */
-export function renderAhorro(m: MedidaDeAhorro): string {
+export function renderAhorro(
+  m: MedidaDeAhorro,
+  t: Textos = textos()
+): string {
   const tokensPdf = tokensDeCaracteres(m.caracteresPdf);
   const tokensMd = tokensDeCaracteres(m.caracteresMarkdown);
   const pct = porcentajeAhorrado(m);
 
   const cifras = `
       <dl class="ahorro-cifras">
-        <div><dt>Tu PDF</dt><dd>~${miles(tokensPdf)} tokens</dd></div>
-        <div><dt>El Markdown</dt><dd>~${miles(tokensMd)} tokens</dd></div>
+        <div><dt>${t.ahorro.tuPdf}</dt><dd>${t.ahorro.tokens(miles(tokensPdf))}</dd></div>
+        <div><dt>${t.ahorro.elMarkdown}</dt><dd>${t.ahorro.tokens(miles(tokensMd))}</dd></div>
       </dl>`;
 
   const aviso =
     m.paginasEscaneadas > 0
-      ? `<p class="apunte">Ojo: al Markdown le faltan ${miles(
-          m.paginasEscaneadas
-        )} página${m.paginasEscaneadas === 1 ? '' : 's'} escaneada${
-          m.paginasEscaneadas === 1 ? '' : 's'
-        }, que necesitan OCR. Parte de la diferencia es contenido que no está, no texto ahorrado.</p>`
+      ? `<p class="apunte">${t.ahorro.faltanEscaneadas(m.paginasEscaneadas)}</p>`
       : '';
 
   if (m.caracteresPdf <= 0) {
     return `${cifras}
-      <p class="veredicto duda"><strong>No hay nada que medir.</strong></p>
-      <p class="apunte">No se extrajo texto de este PDF, así que no podemos
-         compararlo con nada.</p>${aviso}`;
+      <p class="veredicto duda"><strong>${t.ahorro.nadaQueMedir}</strong></p>
+      <p class="apunte">${t.ahorro.nadaQueMedirDetalle}</p>${aviso}`;
   }
 
   if (pct >= 1) {
     return `${cifras}
-      <p class="veredicto bien"><strong>Ahorras ${pct}%</strong></p>
-      <p class="apunte">Estimado a 4 caracteres por token, sobre tu archivo.</p>${aviso}`;
+      <p class="veredicto bien"><strong>${t.ahorro.ahorras(pct)}</strong></p>
+      <p class="apunte">${t.ahorro.ahorrasDetalle}</p>${aviso}`;
   }
 
   return `${cifras}
-    <p class="veredicto duda"><strong>En este archivo no ahorras tokens.</strong></p>
-    <p class="apunte">Pesa casi lo mismo que el texto de tu
-       PDF${pct < 0 ? ', o un poco más' : ''}. Te lo decimos en vez de
-       esconderlo: lo que ganas aquí es un archivo que la IA lee completo y
-       que nunca salió de tu computadora.</p>${aviso}`;
+    <p class="veredicto duda"><strong>${t.ahorro.noAhorras}</strong></p>
+    <p class="apunte">${t.ahorro.noAhorrasDetalle(pct < 0)}</p>${aviso}`;
 }

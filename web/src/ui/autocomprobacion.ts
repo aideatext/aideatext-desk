@@ -1,3 +1,5 @@
+import { textos, type Textos } from '../textos';
+
 /**
  * Autocomprobación de la política de seguridad (CSP).
  *
@@ -46,7 +48,6 @@ export const DESTINO_EXTERNO = 'https://httpbin.org/post';
 export const CUERPO_DE_PRUEBA = 'prueba';
 
 /** Correo al que se enruta cualquier desenlace que no sea el esperado. */
-const CONTACTO = 'first.contact@aideatext.ai';
 
 export type ResultadoAutocomprobacion =
   /** El navegador activó una directiva `connect-src`. Lo esperado. */
@@ -188,37 +189,28 @@ function escapar(s: string): string {
  * de éxito con matices: si la CSP no protege, esta función lo dice con
  * todas sus letras.
  */
-export function renderAutocomprobacion(r: ResultadoAutocomprobacion): string {
+export function renderAutocomprobacion(
+  r: ResultadoAutocomprobacion,
+  t: Textos = textos()
+): string {
   if (r.estado === 'bloqueado') {
     return `
-      <p class="veredicto bien"><strong>El navegador lo impidió.</strong></p>
-      <p>Se intentó enviar la palabra «prueba» a <code>httpbin.org</code>
-         y la petición no salió de tu computadora.</p>
-      <p>Directiva que se activó: <code>${escapar(r.directiva)}</code></p>
-      <p class="apunte">Tu navegador acaba de registrar esta violación en
-         la consola (F12). Ahí está la misma prueba, escrita por él y no
-         por nosotros.</p>`;
+      <p class="veredicto bien"><strong>${t.csp.bloqueadoTitulo}</strong></p>
+      <p>${t.csp.bloqueadoDetalle}</p>
+      <p>${t.csp.directivaActivada} <code>${escapar(r.directiva)}</code></p>
+      <p class="apunte">${t.csp.bloqueadoConsola}</p>`;
   }
 
   if (r.estado === 'no-bloqueado') {
     return `
-      <p class="veredicto mal"><strong>La petición salió. La política de
-         seguridad no está funcionando en este navegador.</strong></p>
-      <p>No deberíamos poder hacer esto, y acabamos de hacerlo delante de
-         ti. Mientras esto ocurra, la garantía de esta página no se
-         sostiene en tu navegador y no queremos que nos creas.</p>
-      <p>Avísanos y lo corregimos:
-         <a href="mailto:${CONTACTO}">${CONTACTO}</a></p>`;
+      <p class="veredicto mal"><strong>${t.csp.noBloqueadoTitulo}</strong></p>
+      <p>${t.csp.noBloqueadoDetalle}</p>
+      <p>${t.csp.avisanosYCorregimos}</p>`;
   }
 
   return `
-    <p class="veredicto duda"><strong>Resultado no concluyente.</strong></p>
-    <p>La petición falló, pero tu navegador no reportó ninguna violación de
-       política. Suele significar que estás sin conexión, o que tu
-       navegador no informa de estas violaciones a la página.</p>
-    <p>La otra comprobación sigue disponible y no depende de nosotros:
-       abre las herramientas de desarrollo (F12), pestaña <strong>Red</strong>,
-       y convierte un PDF. No verás ninguna petición de subida.</p>
-    <p>Si quieres que lo revisemos contigo, escríbenos a
-       <a href="mailto:${CONTACTO}">${CONTACTO}</a></p>`;
+    <p class="veredicto duda"><strong>${t.csp.indeterminadoTitulo}</strong></p>
+    <p>${t.csp.indeterminadoDetalle}</p>
+    <p>${t.csp.indeterminadoAlternativa}</p>
+    <p>${t.csp.siQuieresQueLoRevisemos}</p>`;
 }
