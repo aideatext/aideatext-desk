@@ -348,6 +348,12 @@ describe('encabezado y pie', () => {
     expect(prosa(barra)).toMatch(
       /El laboratorio de formatos digitales para la producción de tus\s*contenidos/
     );
+    // La pertenencia al ecosistema se quedo: el dueño la repuso despues de
+    // que yo la retirara por leer mal el encargo. Va DEBAJO del lema
+    // nuevo, no en su lugar.
+    expect(prosa(barra)).toMatch(
+      /Una micro solución del ecosistema de\s*AIdeaText/
+    );
   });
 
   // El eslogan «Ningún límite es un "no se puede"» estuvo aquí desde la

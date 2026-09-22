@@ -590,7 +590,15 @@ summary {
    todo. */
 .banda { display: none; }
 
-@media (min-height: 700px) and (min-width: 1150px) {
+/* La seccion 4 pide ALTO o ANCHO, y la condicion es explicitamente una
+   disyuncion porque los dos casos son distintos:
+     - alta (>=880) y del ancho minimo: cabe la version completa.
+     - baja (>=700) pero ancha (>=1200): cabe la version corta.
+   A 1152x800 no se cumple ninguna —estrecho Y bajo a la vez— y ahi la
+   seccion no cabe de forma util: su boton sobresalia 12px. Ancho y alto
+   por separado dan el visto bueno; es la combinacion la que no. */
+@media (min-height: 880px) and (min-width: 1150px),
+       (min-height: 700px) and (min-width: 1200px) {
   .banda { display: grid; }
   body {
     grid-template-rows: auto minmax(0, max-content) minmax(0, 1fr) auto;
@@ -826,4 +834,33 @@ footer p { margin: 0; }
 .idiomas [aria-current] {
   background: var(--acento);
   color: #fff;
+}
+
+/* La segunda linea del lema, un punto por debajo: dice de donde viene el
+   producto, no que hace. */
+.lema .ecosistema { color: var(--tenue); font-size: .94em; }
+.lema .ecosistema a { color: var(--acento); }
+
+/* La segunda linea del lema cuesta ~21px de cabecera, y en una pantalla
+   baja esos 21px salen del alto de las columnas: a 1280x600 tiraba CUATRO
+   botones de pago fuera. Dice de donde viene el producto, no que hace, y
+   sigue estando en la seccion 4 y en «Quien esta detras». Entre un dato
+   de procedencia y un boton de pago visible, gana el boton. */
+.lema .ecosistema { display: none; }
+
+@media (min-height: 700px) {
+  .lema .ecosistema { display: inline; }
+}
+
+/* Y con la linea puesta, la seccion 4 se quedaba 16px corta a 1366x768
+   —su boton sobresalia—. Se aprieta la caja, no el aviso. */
+@media (min-height: 700px) and (max-height: 879px) {
+  .banda { padding: .35rem .7rem; gap: .25rem; }
+  .banda h2 { font-size: .93rem; }
+  .banda p { font-size: .82rem; }
+  /* Y cae el argumento de venta, que ya cae tambien por ancho debajo de
+     1200px. Lo que queda es el minimo honesto: que servicio es, que aqui
+     SI leemos el documento, y el boton. El argumento esta entero en la
+     pagina a la que lleva el boton. */
+  .banda .argumento { display: none; }
 }
