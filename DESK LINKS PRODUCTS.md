@@ -5,11 +5,14 @@ MXN 500.00
 21 sept 23:40
 Copiar URL
 OCR de documento escaneado - para estudiantes
-https://buy.stripe.com/cNi3cv0L9beidM6cHh5c405
+https://buy.stripe.com/5kQ4gz65tdmq6jE0Yz5c407
 Activo
-MXN 300.00
-21 sept 23:35
+MXN 200.00
+21 sept
 Copiar URL
+[SUSTITUYE a https://buy.stripe.com/cNi3cv0L9beidM6cHh5c405 (MXN 300.00).
+ El sitio ya no lo enlaza, pero sigue activo en Stripe: quien lo abra por
+ un enlace viejo paga 300 por el producto de 200. ARCHIVARLO.]
 OCR de documento escaneado - para empresas
 https://buy.stripe.com/fZu5kDgK7aae9vQbDd5c404
 Activo

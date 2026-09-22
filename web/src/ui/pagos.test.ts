@@ -47,7 +47,7 @@ describe('PRODUCTOS', () => {
     expect(PRODUCTOS.audio4hEstudiante.importeMxn).toBe(500);
     expect(PRODUCTOS.audio1hEmpresa.importeMxn).toBe(400);
     expect(PRODUCTOS.audio4hEmpresa.importeMxn).toBe(800);
-    expect(PRODUCTOS.ocrEstudiante.importeMxn).toBe(300);
+    expect(PRODUCTOS.ocrEstudiante.importeMxn).toBe(200);
     expect(PRODUCTOS.ocrEmpresa.importeMxn).toBe(500);
     expect(PRODUCTOS.asesoria.importeMxn).toBe(500);
   });

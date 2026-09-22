@@ -105,9 +105,15 @@ describe('renderDiagnosis', () => {
         ]),
       })
     );
-    expect(html).toContain('199');
+    // Se comprueba el RECUENTO, no la cadena suelta. Antes decia
+    // `not.toContain('200')` sobre el HTML entero, y eso dejo de funcionar
+    // el dia que el OCR de estudiante paso a costar 200 MXN: la prueba
+    // fallaba por el precio impreso en el boton, no por el recuento. El
+    // fallo original producia literalmente `<strong>200</strong> páginas`,
+    // asi que esa es la forma que hay que vigilar.
+    expect(html).toMatch(/<strong>199<\/strong>\s*páginas escaneadas/);
     expect(html).toContain('1 en blanco');
-    expect(html).not.toContain('200');
+    expect(html).not.toMatch(/<strong>200<\/strong>\s*páginas/);
   });
 
   it('nunca dice "no se puede" ante un PDF escaneado', () => {

@@ -43,10 +43,15 @@ export const PRODUCTOS = {
     importeMxn: 800,
     url: 'https://buy.stripe.com/8x2cN579x2HM37sgXx5c401',
   },
+  // Sustituye al enlace `…5c405`, que cobraba 300 por lo mismo. El
+  // anterior puede seguir vivo en Stripe y en cualquier sitio donde se
+  // haya compartido: si alguien lo abre, paga 300 por el producto de 200.
+  // Archivarlo en el Dashboard es lo único que corta esa vía, y no se
+  // puede hacer desde aquí.
   ocrEstudiante: {
     nombre: 'OCR de documento escaneado - para estudiantes',
-    importeMxn: 300,
-    url: 'https://buy.stripe.com/cNi3cv0L9beidM6cHh5c405',
+    importeMxn: 200,
+    url: 'https://buy.stripe.com/5kQ4gz65tdmq6jE0Yz5c407',
   },
   ocrEmpresa: {
     nombre: 'OCR de documento escaneado - para empresas',
