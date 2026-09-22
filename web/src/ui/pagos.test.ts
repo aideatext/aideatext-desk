@@ -49,7 +49,6 @@ describe('PRODUCTOS', () => {
     expect(PRODUCTOS.audio4hEmpresa.importeMxn).toBe(800);
     expect(PRODUCTOS.ocrEstudiante.importeMxn).toBe(200);
     expect(PRODUCTOS.ocrEmpresa.importeMxn).toBe(500);
-    expect(PRODUCTOS.asesoria.importeMxn).toBe(500);
   });
 
   // El tramo de 4 horas existe para que comprar más salga mejor. Si alguna

@@ -1,9 +1,14 @@
 Asesoría para la elaboración de documentos académicos, administrativos, proyectos
 https://buy.stripe.com/dRm9AT2Th6Y2azUbDd5c406
-Activo
 MXN 500.00
 21 sept 23:40
-Copiar URL
+
+>>> RETIRADO DEL SITIO. Ya no se enlaza desde ninguna página: el cobro de
+    la asesoría lo hace Calendly, conectado a Stripe, dentro de la propia
+    reserva («Semantic Text Analysis Meeting», 30 min, 20 USD).
+    ARCHIVARLO EN EL DASHBOARD. Mientras siga activo, quien tenga la URL
+    guardada paga 500 MXN —unos 27 USD— por lo que el calendario cobra
+    ahora a 20, y además sin reservar hora: habría que devolvérselo.
 OCR de documento escaneado - para estudiantes
 https://buy.stripe.com/5kQ4gz65tdmq6jE0Yz5c407
 Activo

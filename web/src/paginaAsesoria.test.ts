@@ -6,7 +6,6 @@ import { describe, it, expect } from 'vitest';
  */
 import html from '../asesoriatesis/index.html?raw';
 import portada from '../index.html?raw';
-import { PRODUCTOS } from './ui/pagos';
 
 const marcado = html
   .replace(/<style[\s\S]*?<\/style>/g, ' ')
@@ -38,7 +37,6 @@ describe('la página de asesoría', () => {
   // cliente reclama.
   it('no lleva ningún enlace de pago suelto: el calendario ya cobra', () => {
     expect(marcado).not.toContain('buy.stripe.com');
-    expect(marcado).not.toContain(PRODUCTOS.asesoria.url);
   });
 
   it('lleva el calendario que cobra, apuntando al evento real', () => {
@@ -249,7 +247,7 @@ describe('la portada enlaza a la asesoría', () => {
   // alguien cambie de idea.
   it('la franja lleva a la página, NO al checkout', () => {
     expect(banda()).not.toContain('buy.stripe.com');
-    expect(banda()).not.toContain(PRODUCTOS.asesoria.url);
+    expect(banda()).toContain('/asesoriatesis/');
   });
 
   // Y aun así la franja tiene que decirlo, porque hay quien pulsa sin
@@ -272,7 +270,6 @@ describe('la portada enlaza a la asesoría', () => {
     expect(columnas).toHaveLength(3);
     for (const col of columnas) {
       expect(col).not.toContain('/asesoriatesis');
-      expect(col).not.toContain(PRODUCTOS.asesoria.url);
     }
   });
 });

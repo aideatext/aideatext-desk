@@ -58,13 +58,18 @@ export const PRODUCTOS = {
     importeMxn: 500,
     url: 'https://buy.stripe.com/fZu5kDgK7aae9vQbDd5c404',
   },
-  asesoria: {
-    nombre:
-      'Asesoría para la elaboración de documentos académicos, administrativos, proyectos',
-    importeMxn: 500,
-    url: 'https://buy.stripe.com/dRm9AT2Th6Y2azUbDd5c406',
-  },
 } as const satisfies Record<string, Producto>;
+
+/**
+ * NO HAY PRODUCTO DE ASESORÍA AQUÍ, y su ausencia es deliberada.
+ *
+ * Existió: `…5c406`, 500 MXN. Se retiró cuando Calendly quedó conectado a
+ * Stripe y la reserva pasó a cobrarse dentro del propio calendario. Tener
+ * los dos vivos cobraba dos veces a quien pulsara el botón y después
+ * reservara — y el enlace viejo sigue cobrando 500 MXN por lo que el
+ * calendario cobra ahora en dólares, así que hay que archivarlo en el
+ * Dashboard de Stripe. Eso no se puede hacer desde aquí.
+ */
 
 export type ClaveDeProducto = keyof typeof PRODUCTOS;
 
