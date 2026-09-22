@@ -197,6 +197,17 @@
 
     .datos a { color: var(--duda); }
 
+    .titulo-agenda { margin-top: 1.8rem; }
+
+    /* El widget trae su propio alto en un `style` inline (700px, como
+       manda Calendly). Aqui solo se le pone el marco para que no quede
+       flotando sobre el fondo blanco. */
+    .calendly-inline-widget {
+      border: 1px solid var(--linea);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
     /* -- Pie --------------------------------------------------- */
 
     footer {
@@ -283,9 +294,33 @@
           Agenda tu reunión
         </a>
         <p class="despues">
-          Al pagar eliges el día y la hora. Tarjeta u OXXO.
+          Tarjeta u OXXO. Son <strong>30 minutos</strong>.
         </p>
       </div>
+
+      <!-- ===== El calendario =====
+           ESTE ES EL UNICO SITIO DEL DOMINIO QUE CARGA CODIGO DE UN
+           TERCERO, y por eso la CSP de esta ruta es distinta de la del
+           resto. `staticwebapp.config.json` declara una politica propia
+           para `/asesoriatesis*` que abre `script-src` a
+           assets.calendly.com y `frame-src` a calendly.com, y NO TOCA la
+           politica global: la portada sigue con `connect-src 'self'` y su
+           promesa de que el archivo no sale del navegador se puede seguir
+           comprobando en la pestaña Red. La excepcion esta acotada a esta
+           pagina, que no procesa ningun archivo.
+
+           El orden —pagar arriba, agendar abajo— es deliberado: el
+           calendario por si solo permite reservar sin pagar. Si eso
+           empieza a pasar, la solucion no es esconderlo sino usar un tipo
+           de evento de Calendly que exija el pago. -->
+      <h2 class="titulo-agenda">Elige el día y la hora</h2>
+
+      <div class="calendly-inline-widget"
+           data-url="https://calendly.com/manuel-var-ale-aideatext/30min"
+           style="min-width:320px;height:700px;"></div>
+      <script type="text/javascript"
+              src="https://assets.calendly.com/assets/external/widget.js"
+              async></script>
 
     </main>
 
