@@ -223,7 +223,7 @@ describe('columna 3: traduccion, sin producto todavia', () => {
   it('sigue ofreciendo la lista de espera por mailto', () => {
     expect(trad()).toContain('Avísame cuando esté listo');
     expect(trad()).toMatch(
-      /href="mailto:first\.contact\.desk@aideatext\.ai\?subject=[^"]*&amp;body=[^"]*"/
+      /href="mailto:first\.contact@aideatext\.ai\?subject=[^"]*&amp;body=[^"]*"/
     );
   });
 
@@ -368,7 +368,7 @@ describe('encabezado y pie', () => {
       'Quién está detrás',
       'Código del proyecto',
       'Tratamiento de datos',
-      'first.contact.desk@aideatext.ai',
+      'first.contact@aideatext.ai',
     ]) {
       expect(pie).toContain(etiqueta);
     }

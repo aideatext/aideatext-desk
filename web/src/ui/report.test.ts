@@ -127,7 +127,7 @@ describe('renderDiagnosis', () => {
     const html = renderDiagnosis(
       base({ overall: 'escaneado', convertibleInBrowser: false })
     );
-    expect(html).toContain('first.contact.desk@aideatext.ai');
+    expect(html).toContain('first.contact@aideatext.ai');
   });
 
   // Cuarto veredicto de `resumirPaginas`, y el unico que ninguna prueba
@@ -144,7 +144,7 @@ describe('renderDiagnosis', () => {
       })
     );
     expect(html.toLowerCase()).not.toContain('no se puede');
-    expect(html).toContain('first.contact.desk@aideatext.ai');
+    expect(html).toContain('first.contact@aideatext.ai');
   });
 
   // Simetrica de la de abajo, y no redundante. Al separar `vacio` de

@@ -46,7 +46,7 @@ export const DESTINO_EXTERNO = 'https://httpbin.org/post';
 export const CUERPO_DE_PRUEBA = 'prueba';
 
 /** Correo al que se enruta cualquier desenlace que no sea el esperado. */
-const CONTACTO = 'first.contact.desk@aideatext.ai';
+const CONTACTO = 'first.contact@aideatext.ai';
 
 export type ResultadoAutocomprobacion =
   /** El navegador activó una directiva `connect-src`. Lo esperado. */

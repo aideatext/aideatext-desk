@@ -152,7 +152,7 @@ describe('tarifaPara', () => {
   // dueño que institucion falta en la lista.
   it('nunca cierra la puerta: ofrece dar de alta la institucion', () => {
     const t = tarifaPara('alguien@universidad-nueva.mx');
-    expect(t.mensaje).toContain('first.contact.desk@aideatext.ai');
+    expect(t.mensaje).toContain('first.contact@aideatext.ai');
     expect(t.mensaje.toLowerCase()).toContain('agregamos');
     expect(t.mensaje.toLowerCase()).not.toContain('no se puede');
     expect(t.mensaje.toLowerCase()).not.toContain('no calificas');

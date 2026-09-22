@@ -239,14 +239,14 @@ describe('renderAutocomprobacion', () => {
     const s = html({ estado: 'no-bloqueado' });
     expect(s).toContain('no está funcionando');
     expect(s).not.toContain('impidió');
-    expect(s).toContain('first.contact.desk@aideatext.ai');
+    expect(s).toContain('first.contact@aideatext.ai');
   });
 
   it('en el caso indeterminado lo llama no concluyente y ofrece salida', () => {
     const s = html({ estado: 'indeterminado' });
     expect(s).toContain('no concluyente');
     expect(s).not.toContain('impidió');
-    expect(s).toContain('first.contact.desk@aideatext.ai');
+    expect(s).toContain('first.contact@aideatext.ai');
   });
 
   it('los tres desenlaces producen textos distintos', () => {

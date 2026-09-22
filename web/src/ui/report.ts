@@ -1,7 +1,7 @@
 import type { PdfDiagnosis } from '../pdf/diagnose';
 import { PRODUCTOS } from './pagos';
 
-const CONTACTO = 'first.contact.desk@aideatext.ai';
+const CONTACTO = 'first.contact@aideatext.ai';
 
 /**
  * Los dos botones de OCR.

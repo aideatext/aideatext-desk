@@ -94,7 +94,7 @@ async function procesar(file: File): Promise<void> {
           salida.innerHTML = `
             <p>Algo falló al convertir este documento.</p>
             <p>Escríbenos a
-               <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+               <a href="mailto:first.contact@aideatext.ai">first.contact@aideatext.ai</a>
                y lo revisamos contigo.</p>`;
         }
       });
@@ -104,7 +104,7 @@ async function procesar(file: File): Promise<void> {
       <p>No pudimos leer este archivo. Puede estar protegido con contraseña
          o dañado.</p>
       <p>Escríbenos a
-         <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+         <a href="mailto:first.contact@aideatext.ai">first.contact@aideatext.ai</a>
          y lo revisamos.</p>`;
   }
 }

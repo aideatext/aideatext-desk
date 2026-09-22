@@ -59,7 +59,7 @@ export const SUFIJOS_INSTITUCIONALES: readonly string[] = [
 ];
 
 /** Correo al que se enruta la universidad que no aparece en la lista. */
-export const CONTACTO = 'first.contact.desk@aideatext.ai';
+export const CONTACTO = 'first.contact@aideatext.ai';
 
 /**
  * Lo que se le dice a quien no coincide. Nunca «no se puede»: la lista es
