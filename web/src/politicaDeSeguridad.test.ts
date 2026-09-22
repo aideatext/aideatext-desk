@@ -119,18 +119,27 @@ describe('el reparto de código de terceros', () => {
     );
   });
 
-  // Pagar va ANTES de agendar en el documento. El calendario por sí solo
-  // permite reservar sin pagar; al menos que el que llega lea el precio
-  // primero.
-  it('el pago aparece antes que el calendario', () => {
-    // Se busca en el CUERPO, no en el archivo entero: la hoja de estilo
-    // menciona `.calendly-inline-widget` mucho antes que el marcado, y
-    // comparar esas posiciones no dice nada sobre lo que ve el visitante.
+  // El cobro vive dentro de Calendly desde que se conectó a Stripe, así
+  // que el enlace de pago suelto se retiró. Los dos juntos cobraban dos
+  // veces a quien pulsara el botón y luego reservara.
+  it('la asesoría no tiene enlace de pago propio: cobra el calendario', () => {
     const cuerpo = asesoria.slice(asesoria.indexOf('<body'));
-    const pago = cuerpo.indexOf('buy.stripe.com');
-    const calendario = cuerpo.indexOf('<div class="calendly-inline-widget"');
-    expect(pago).toBeGreaterThan(-1);
-    expect(calendario).toBeGreaterThan(-1);
-    expect(pago).toBeLessThan(calendario);
+    expect(cuerpo).not.toContain('buy.stripe.com');
+    expect(cuerpo).toContain('calendly-inline-widget');
+  });
+
+  // El script de Calendly no lleva `integrity` a propósito: su URL no
+  // lleva versión, así que un hash fijado rompería el calendario el día
+  // que Calendly publique. Lo que acota el riesgo es que la CSP de esta
+  // ruta permita UN SOLO origen — si alguien añadiera otro, esta prueba
+  // y las de arriba lo dirían.
+  it('el tercero permitido es exactamente uno', () => {
+    const csp = rutaAsesoria?.headers?.['Content-Security-Policy'] ?? '';
+    const origenes = [...csp.matchAll(/https:\/\/[\w.*-]+/g)].map((m) => m[0]);
+    expect([...new Set(origenes)].sort()).toEqual([
+      'https://*.calendly.com',
+      'https://assets.calendly.com',
+      'https://calendly.com',
+    ]);
   });
 });

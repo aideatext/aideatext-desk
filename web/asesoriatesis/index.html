@@ -7,7 +7,7 @@
 
   <title>Asesoría con grafos de razonamiento semántico | AIDesk</title>
   <meta name="description"
-        content="Agenda la primera reunión para analizar tu documento con grafos de razonamiento semántico. 500 MXN, y se descuentan del trabajo si nos contratas." />
+        content="Agenda la primera reunión para analizar tu documento con grafos de razonamiento semántico. 30 minutos, y se descuenta del trabajo si nos contratas." />
 
   <link rel="icon" type="image/png" sizes="32x32" href="/img/Logo32x32.png" />
   <link rel="icon" type="image/png" sizes="64x64" href="/img/Logo64x64.png" />
@@ -19,7 +19,7 @@
   <meta property="og:url" content="https://desk.aideatext.ai/asesoriatesis/" />
   <meta property="og:title" content="Analiza tu documento con grafos de razonamiento semántico" />
   <meta property="og:description"
-        content="Agenda la primera reunión. 500 MXN, y se descuentan del trabajo si nos contratas." />
+        content="Agenda la primera reunión. 30 minutos, y se descuenta del trabajo si nos contratas." />
   <meta property="og:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
   <meta property="og:image:width" content="1920" />
   <meta property="og:image:height" content="1080" />
@@ -28,26 +28,35 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Analiza tu documento con grafos de razonamiento semántico" />
   <meta name="twitter:description"
-        content="Agenda la primera reunión. 500 MXN, y se descuentan del trabajo si nos contratas." />
+        content="Agenda la primera reunión. 30 minutos, y se descuenta del trabajo si nos contratas." />
   <meta name="twitter:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
   <meta name="twitter:image:alt" content="AIdeaText" />
 
-  <!-- Ni una referencia externa, igual que en la portada: la CSP las
-       bloquearia, y ademas el argumento del sitio es que nada sale de
-       aqui. Tipografias del sistema e imagenes propias.
+  <!-- ===== Esta pagina YA NO SE DESPLAZA =====
+       Antes era un texto que se leia y el scroll estaba bien. Ahora es una
+       sola herramienta —el calendario— y vale la misma regla que la
+       portada: lo que importa se ve de un vistazo. El armazon es una
+       rejilla de cuatro filas y la del calendario es la unica que crece,
+       asi que el widget se queda con todo el alto que sobre.
 
-       ESTA PAGINA SI SE DESPLAZA, y es deliberado. La portada no lo hace
-       porque es un panel de herramientas que tiene que caber de un
-       vistazo; esta es un texto que se lee, y forzarla a caber en 640px
-       solo produciria letra chica. La regla de «sin scroll» era para la
-       portada, no un dogma del sitio. -->
+       El unico desplazamiento posible es el de DENTRO del calendario, que
+       lo pone Calendly y no podemos quitar: su interfaz necesita unos
+       700px y en un portatil no siempre los hay.
+
+       ===== Y ES LA UNICA RUTA DEL DOMINIO CON CSP PROPIA =====
+       `staticwebapp.config.json` le abre `script-src` a
+       assets.calendly.com y `frame-src` a calendly.com. La politica
+       global NO se toca: la portada sigue con `connect-src 'self'` y su
+       promesa de que el archivo no sale del navegador se puede seguir
+       comprobando en la pestaña Red. La excepcion es tolerable porque
+       esta pagina no procesa ningun archivo — y hay una prueba que lo
+       fija. -->
   <style>
     :root {
       --tinta: #1a1a1a;
       --tenue: #5b5b5b;
       --linea: #d9d9d9;
       --fondo: #ffffff;
-      --papel: #f6f6f4;
       --acento: #14532d;
       --acento-suave: #eef5f0;
       --duda: #6b4e00;
@@ -56,19 +65,29 @@
 
     * { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; }
+    html, body { height: 100%; }
 
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto,
                    "Helvetica Neue", Arial, sans-serif;
       color: var(--tinta);
       background: var(--fondo);
-      font-size: 16px;
-      line-height: 1.55;
+      font-size: clamp(14px, 0.9vh + 8px, 16.5px);
+      line-height: 1.45;
       margin: 0;
-      padding: 0 clamp(.9rem, 4vw, 1.5rem);
+      padding: 0 clamp(.7rem, 1.8vw, 1.5rem);
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
     }
 
-    .envoltura { width: 100%; max-width: 760px; margin-inline: auto; }
+    .barra, .intro, .agenda, footer {
+      width: 100%;
+      max-width: 900px;
+      margin-inline: auto;
+    }
 
     a { color: var(--acento); }
 
@@ -77,267 +96,201 @@
     .barra {
       display: flex;
       align-items: center;
-      gap: .5rem 1.4rem;
+      gap: .4rem 1.4rem;
       flex-wrap: wrap;
-      padding: .7rem 0 .6rem;
+      padding: .55rem 0 .5rem;
       border-bottom: 2px solid var(--linea);
     }
 
     .logos { display: flex; align-items: center; gap: 1rem; flex: none; }
-    .logos .aideatext { width: 81px; height: 81px; display: block; }
-    .logos .nvidia { height: 81px; width: auto; display: block; }
+
+    .logos .aideatext {
+      width: clamp(46px, 8vh, 81px);
+      height: clamp(46px, 8vh, 81px);
+      display: block;
+    }
+
+    .logos .nvidia {
+      height: clamp(46px, 8vh, 81px);
+      width: auto;
+      display: block;
+    }
+
+    h1 {
+      font-size: clamp(.98rem, 1.5vw, 1.25rem);
+      line-height: 1.22;
+      letter-spacing: -.01em;
+      margin: 0;
+      flex: 1 1 18rem;
+      min-width: 0;
+    }
 
     .volver {
-      font-size: .9rem;
+      font-size: .88rem;
       font-weight: 600;
       text-decoration: none;
-      margin-left: auto;
+      flex: none;
     }
 
     .volver:hover { text-decoration: underline; }
 
-    /* -- Texto ------------------------------------------------- */
+    /* -- La franja de contexto --------------------------------- */
 
-    h1 {
-      font-size: clamp(1.35rem, 3.4vw, 1.8rem);
-      line-height: 1.22;
-      letter-spacing: -.01em;
-      margin: 1.4rem 0 .5rem;
+    .intro {
+      display: flex;
+      align-items: center;
+      gap: .5rem .9rem;
+      flex-wrap: wrap;
+      padding: .5rem 0 .45rem;
     }
 
-    .entradilla {
-      font-size: 1.05rem;
-      color: var(--tenue);
-      margin: 0 0 1.4rem;
-    }
+    .intro p { margin: 0; font-size: .87rem; }
 
-    h2 {
-      font-size: 1.1rem;
-      letter-spacing: -.01em;
-      margin: 1.6rem 0 .4rem;
-    }
-
-    p { margin: 0 0 .7rem; }
-
-    ol { margin: 0 0 .7rem; padding-left: 1.3rem; }
-    li { margin-bottom: .45rem; }
-
-    /* -- El bloque de compra ----------------------------------- */
-
-    .compra {
-      margin: 1.5rem 0;
-      padding: 1.1rem 1.2rem;
-      border: 2px solid var(--acento);
-      border-radius: 12px;
-      background: var(--acento-suave);
-    }
-
-    .compra .precio {
-      font-size: 1.7rem;
-      font-weight: 800;
-      letter-spacing: -.02em;
-      margin: 0;
-    }
-
-    .compra .porque { margin: .1rem 0 .8rem; color: var(--tenue); }
-
-    .boton {
-      display: inline-block;
-      font: inherit;
-      font-size: 1rem;
-      font-weight: 700;
-      color: #fff;
-      background: var(--acento);
-      border: 1px solid var(--acento);
-      border-radius: 8px;
-      padding: .65rem 1.3rem;
-      text-decoration: none;
-      text-align: center;
-    }
-
-    .boton:hover { background: #0e3d21; color: #fff; }
-
-    .compra .despues {
-      margin: .8rem 0 0;
-      font-size: .9rem;
-      color: var(--tenue);
-    }
-
-    /* -- El aviso que esta pagina NO puede esconder ------------- */
-
-    /* La portada entera se sostiene sobre que tu archivo no sale de tu
-       navegador. Este servicio es lo contrario: una persona lee tu
-       documento, porque no hay forma de asesorarte sin leerlo. Si ese
-       cambio no se dice aqui, en grande y antes del boton, la pagina
-       estaria usando la confianza que gana la portada para vender
-       justamente el caso donde esa promesa no aplica. */
-    .aviso {
-      margin: 1.5rem 0;
-      padding: .9rem 1rem;
-      border: 1px solid #e6d7a8;
-      border-radius: 12px;
-      background: var(--duda-suave);
-      color: var(--duda);
-    }
-
-    .aviso h2 { margin-top: 0; color: var(--duda); }
-    .aviso p:last-child { margin-bottom: 0; }
-
-    /* Lo unico que quedo de texto. No es letra chica escondida: es del
-       mismo cuerpo que el resto y va justo debajo del boton. */
+    /* El aviso de que aqui SI leemos el documento. Ya no hay un boton de
+       pago debajo del que tenga que ir delante —el cobro lo hace
+       Calendly—, pero sigue teniendo que leerse ANTES de reservar, que es
+       la decision que este aviso puede cambiar. */
     .datos {
-      margin: 1.3rem 0 0;
-      padding: .8rem 1rem;
+      flex: 1 1 26rem;
+      min-width: 0;
+      padding: .45rem .7rem;
       border: 1px solid #e6d7a8;
-      border-radius: 12px;
+      border-radius: 9px;
       background: var(--duda-suave);
       color: var(--duda);
-      font-size: .92rem;
     }
 
     .datos a { color: var(--duda); }
 
-    .titulo-agenda { margin-top: 1.8rem; }
+    .precio {
+      flex: none;
+      padding: .45rem .8rem;
+      border: 1px solid #c3ddcc;
+      border-radius: 9px;
+      background: var(--acento-suave);
+      color: var(--acento);
+    }
 
-    /* El widget trae su propio alto en un `style` inline (700px, como
-       manda Calendly). Aqui solo se le pone el marco para que no quede
-       flotando sobre el fondo blanco. */
+    .precio .cifra { font-weight: 800; font-size: 1.15em; }
+
+    /* -- El calendario ----------------------------------------- */
+
+    /* La fila que crece. `min-height: 0` es lo que permite que la rejilla
+       la encoja en una pantalla baja en vez de empujar el pie fuera. */
+    .agenda {
+      min-height: 0;
+      padding-bottom: .4rem;
+      display: grid;
+    }
+
+    /* SIN alto fijo, al reves de lo que trae el fragmento de Calendly.
+       Su `height:700px` inline es lo que obligaba a la pagina a
+       desplazarse; aqui el contenedor toma el alto de su fila y el widget
+       se ajusta a el. */
     .calendly-inline-widget {
+      min-width: 0;
+      height: 100%;
       border: 1px solid var(--linea);
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
     }
+
+    .calendly-inline-widget iframe { display: block; }
 
     /* -- Pie --------------------------------------------------- */
 
     footer {
-      margin-top: 2.2rem;
-      padding: .9rem 0 1.4rem;
       border-top: 1px solid var(--linea);
-      font-size: .85rem;
+      padding: .3rem 0 .4rem;
+      font-size: .8rem;
       color: var(--tenue);
     }
 
     footer .fila {
       display: flex;
       flex-wrap: wrap;
-      gap: .5rem 1.1rem;
-      margin-bottom: .5rem;
+      gap: .1rem 1.1rem;
     }
 
-    .marca { margin: 0; font-size: .78rem; }
+    .marca { margin: .2rem 0 0; font-size: .72rem; }
 
-    /* ===== Telefono =====
-       Esta pagina ya se desplazaba y no tenia ninguna regla movil, asi que
-       heredaba medidas pensadas para escritorio: los logotipos a 62px se
-       comian un tercio de la primera pantalla, y «Volver» se iba solo a
-       una linea alineada a la derecha por el `margin-left: auto`, que en
-       una barra envuelta deja de significar «al otro extremo» y pasa a
-       significar «una fila para mi solo». */
-    @media (max-width: 560px) {
-      .logos .aideatext { width: 62px; height: 62px; }
-      .logos .nvidia { height: 62px; }
-
-      .volver { margin-left: 0; }
-
-      /* 44px de area tactil, el minimo de Apple y Google. */
-      .boton { min-height: 44px; display: inline-flex; align-items: center; }
-
-      .compra { padding: .9rem 1rem; }
-      .compra .precio { font-size: 1.5rem; }
+    /* ===== Pantalla estrecha o muy baja =====
+       Aqui la rejilla sin scroll deja de tener sentido: el calendario de
+       Calendly necesita sitio, y apretarlo a 200px no lo hace usable, lo
+       hace inservible. Se permite el desplazamiento y se le devuelve al
+       widget un alto de trabajo. */
+    @media (max-width: 700px), (max-height: 620px) {
+      body {
+        display: block;
+        height: auto;
+        overflow: visible;
+        font-size: 16px;
+        padding-bottom: 1.4rem;
+      }
+      .calendly-inline-widget { height: 680px; }
+      .logos .aideatext { width: 54px; height: 54px; }
+      .logos .nvidia { height: 54px; }
+      .volver { margin-left: auto; }
     }
   </style>
 </head>
 <body>
 
-  <div class="envoltura">
+  <header class="barra">
+    <span class="logos">
+      <img class="aideatext" src="/img/Logo_300x300.png" width="81" height="81"
+           alt="AIdeaText" />
+      <img class="nvidia" src="/img/nvidia-inception-color.svg" width="188" height="81"
+           alt="AIdeaText es miembro del programa NVIDIA Inception" />
+    </span>
+    <h1>Asesoría para el análisis de documentos con grafos de razonamiento semántico</h1>
+    <a class="volver" href="/">← Volver a AIDesk</a>
+  </header>
 
-    <header class="barra">
-      <span class="logos">
-        <img class="aideatext" src="/img/Logo_300x300.png" width="81" height="81"
-             alt="AIdeaText" />
-        <img class="nvidia" src="/img/nvidia-inception-color.svg" width="188" height="81"
-             alt="AIdeaText es miembro del programa NVIDIA Inception" />
-      </span>
-      <a class="volver" href="/">← Volver a AIDesk</a>
-    </header>
-
-    <main>
-      <h1>Asesoría para el análisis de documentos con grafos de razonamiento semántico</h1>
-
-      <!-- SIN prosa: el dueño pidió dejar solo el pago y el calendario.
-           Lo que explica el servicio vive en la sección 4 de la portada,
-           que es de donde se llega aquí; repetirlo pondría a alguien a
-           leer dos veces lo mismo antes de poder pagar.
-
-           La única línea que NO se borró es la del tratamiento de datos.
-           Es el único servicio donde una persona lee la tesis del cliente,
-           y cobrar por él sin decir en ninguna parte qué pasa con el
-           archivo no es una decisión de maquetación. Ocupa dos renglones
-           y enlaza al detalle. -->
-      <p class="datos">
-        Aquí <strong>sí leemos tu documento</strong>: no hay forma de
-        asesorarte sin leerlo. No lo publicamos, no lo compartimos y no lo
-        usamos para entrenar nada; lo borramos al terminar, o antes si lo
-        pides. El detalle, en
-        <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos</a>.
-      </p>
-
-      <div class="compra">
-        <p class="precio">500 MXN</p>
-        <p class="porque">
-          La primera reunión, como una consulta médica.
-          <strong>Si después nos contratas, estos 500 se descuentan del
-          trabajo.</strong>
-        </p>
-        <a class="boton" href="https://buy.stripe.com/dRm9AT2Th6Y2azUbDd5c406">
-          Agenda tu reunión
-        </a>
-        <p class="despues">
-          Tarjeta u OXXO. Son <strong>30 minutos</strong>.
-        </p>
-      </div>
-
-      <!-- ===== El calendario =====
-           ESTE ES EL UNICO SITIO DEL DOMINIO QUE CARGA CODIGO DE UN
-           TERCERO, y por eso la CSP de esta ruta es distinta de la del
-           resto. `staticwebapp.config.json` declara una politica propia
-           para `/asesoriatesis*` que abre `script-src` a
-           assets.calendly.com y `frame-src` a calendly.com, y NO TOCA la
-           politica global: la portada sigue con `connect-src 'self'` y su
-           promesa de que el archivo no sale del navegador se puede seguir
-           comprobando en la pestaña Red. La excepcion esta acotada a esta
-           pagina, que no procesa ningun archivo.
-
-           El orden —pagar arriba, agendar abajo— es deliberado: el
-           calendario por si solo permite reservar sin pagar. Si eso
-           empieza a pasar, la solucion no es esconderlo sino usar un tipo
-           de evento de Calendly que exija el pago. -->
-      <h2 class="titulo-agenda">Elige el día y la hora</h2>
-
-      <div class="calendly-inline-widget"
-           data-url="https://calendly.com/manuel-var-ale-aideatext/30min"
-           style="min-width:320px;height:700px;"></div>
-      <script type="text/javascript"
-              src="https://assets.calendly.com/assets/external/widget.js"
-              async></script>
-
-    </main>
-
-    <footer>
-      <div class="fila">
-        <a href="/">AIDesk</a>
-        <a href="https://github.com/aideatext/aideatext-desk">Código del proyecto</a>
-        <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos</a>
-        <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
-      </div>
-      <p class="marca">
-        © 2025 NVIDIA, the NVIDIA logo are trademarks and/or registered
-        trademarks of NVIDIA Corporation in the U.S. and other countries.
-      </p>
-    </footer>
-
+  <div class="intro">
+    <p class="datos">
+      Aquí <strong>sí leemos tu documento</strong>: no hay forma de
+      asesorarte sin leerlo. No lo publicamos, no lo compartimos y no lo
+      usamos para entrenar nada; lo borramos al terminar, o antes si lo
+      pides. El detalle, en
+      <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos</a>.
+    </p>
+    <p class="precio">
+      <span class="cifra">30 min · 30 USD</span><br />
+      Se descuenta del trabajo si nos contratas.
+    </p>
   </div>
+
+  <!-- El calendario COBRA. Calendly esta conectado a Stripe y la reserva
+       no se cierra sin el pago, asi que el enlace de pago suelto que habia
+       aqui se retiro: dejar los dos era una trampa de cobro doble para
+       quien pulsara el boton y luego reservara. -->
+  <div class="agenda">
+    <div class="calendly-inline-widget"
+         data-url="https://calendly.com/manuel-var-ale-aideatext/30min"></div>
+    <!-- SIN `integrity`, y no por descuido. La URL de Calendly no lleva
+         version: ellos publican en la misma ruta y un hash fijado romperia
+         el calendario el dia que actualicen, sin aviso. Calendly tampoco
+         publica hashes para este recurso. Lo que acota el riesgo es la CSP
+         de esta ruta —un solo origen permitido— y que esta pagina no toca
+         ningun archivo del usuario. -->
+    <script type="text/javascript"
+            src="https://assets.calendly.com/assets/external/widget.js"
+            async></script>
+  </div>
+
+  <footer>
+    <div class="fila">
+      <a href="/">AIDesk</a>
+      <a href="https://github.com/aideatext/aideatext-desk">Código del proyecto</a>
+      <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos</a>
+      <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+    </div>
+    <p class="marca">
+      © 2025 NVIDIA, the NVIDIA logo are trademarks and/or registered
+      trademarks of NVIDIA Corporation in the U.S. and other countries.
+    </p>
+  </footer>
 
 </body>
 </html>

@@ -30,19 +30,28 @@ describe('la página de asesoría', () => {
     expect(texto).not.toMatch(/estrella|embudo|Coronas|lóbulos/);
   });
 
-  it('cobra la primera reunión con el enlace correcto', () => {
-    expect(marcado).toContain(PRODUCTOS.asesoria.url);
-    expect(texto).toContain(`${PRODUCTOS.asesoria.importeMxn} MXN`);
+  // LA PRUEBA MÁS IMPORTANTE DE ESTA PÁGINA, y es una prohibición.
+  // Calendly está conectado a Stripe: la reserva no se cierra sin pagar.
+  // Un enlace de pago suelto AQUÍ, junto al calendario, es una trampa de
+  // cobro doble — alguien pulsa el botón, paga, y después reserva y paga
+  // otra vez. No falla nada, no avisa nadie, y se descubre cuando el
+  // cliente reclama.
+  it('no lleva ningún enlace de pago suelto: el calendario ya cobra', () => {
+    expect(marcado).not.toContain('buy.stripe.com');
+    expect(marcado).not.toContain(PRODUCTOS.asesoria.url);
   });
 
-  // Un solo enlace de pago. Si apareciera otro, sería el de otro servicio
-  // —y el comprador pagaría por horas de audio creyendo que agenda una
-  // reunión.
-  it('no cablea ningún otro producto', () => {
-    const enlaces = [
-      ...marcado.matchAll(/https:\/\/buy\.stripe\.com\/\w+/g),
-    ].map((m) => m[0]);
-    expect(enlaces).toEqual([PRODUCTOS.asesoria.url]);
+  it('lleva el calendario que cobra, apuntando al evento real', () => {
+    expect(marcado).toContain(
+      'data-url="https://calendly.com/manuel-var-ale-aideatext/30min"'
+    );
+  });
+
+  // El fragmento que da Calendly trae `height:700px` en un `style`
+  // inline, y eso es lo que obligaba a la página a desplazarse. El alto
+  // lo pone ahora la hoja de estilo, contra la fila que le toca.
+  it('no fija el alto del calendario en el marcado', () => {
+    expect(marcado).not.toMatch(/calendly-inline-widget[^>]*height:\s*\d+px/);
   });
 
   // ESTA es la prueba que justifica que la página exista aparte. La
@@ -71,12 +80,17 @@ describe('la página de asesoría', () => {
   // después de haber pagado, y es justo la información que puede hacer que
   // alguien decida no contratar. Una advertencia que llega tarde no es una
   // advertencia.
-  it('el aviso aparece antes del botón de pago, no después', () => {
-    const aviso = marcado.indexOf('sí leemos tu documento');
-    const boton = marcado.indexOf(PRODUCTOS.asesoria.url);
+  // El aviso ya no precede a un botón de pago, porque ese botón se fue.
+  // Sigue teniendo que preceder al CALENDARIO: es la información que
+  // puede hacer que alguien decida no reservar, y llega tarde si se lee
+  // después de haber elegido día y hora.
+  it('el aviso aparece antes del calendario, no después', () => {
+    const cuerpo = marcado.slice(marcado.indexOf('<body'));
+    const aviso = cuerpo.indexOf('sí leemos tu documento');
+    const calendario = cuerpo.indexOf('calendly-inline-widget');
     expect(aviso).toBeGreaterThan(-1);
-    expect(boton).toBeGreaterThan(-1);
-    expect(aviso).toBeLessThan(boton);
+    expect(calendario).toBeGreaterThan(-1);
+    expect(aviso).toBeLessThan(calendario);
   });
 
   // La página ya no explica «qué no es» porque ya no explica nada. La
@@ -89,19 +103,25 @@ describe('la página de asesoría', () => {
     expect(t).not.toMatch(/redactamos por ti/);
   });
 
-  it('el botón invita a agendar', () => {
-    expect(texto).toMatch(/Agenda tu reunión/);
+  it('anuncia la duración y que se descuenta del trabajo', () => {
+    expect(texto).toMatch(/30 min/);
+    expect(texto).toMatch(/Se descuenta del trabajo si nos contratas/);
   });
 
   // El descuento es un compromiso comercial, no un adorno: quien paga los
   // 500 lo lee y cuenta con el. Si desaparece del texto sin que nadie se
   // entere, la pagina deja de prometer algo que alguien ya compro.
-  it('dice que los 500 se descuentan si contratan', () => {
-    expect(texto).toMatch(/se descuentan del trabajo/);
+  // EL PRECIO NO SE ESCRIBE DOS VECES. Quien cobra ahora es Calendly, y
+  // la página no puede anunciar una cifra propia que el checkout
+  // contradiga: ya pasó una vez —la portada decía «200 MXN por 4 horas» y
+  // Stripe cobraba 500— y no lo detectó nada. Aquí se dice la duración y
+  // la condición; el importe lo pone quien lo cobra.
+  it('no anuncia un importe que no cobra esta página', () => {
+    expect(texto).not.toMatch(/\d+\s*MXN/);
   });
 
-  // Sin `<form>` y sin peticiones: la misma CSP global cubre esta ruta, y
-  // `form-action 'none'` haría que un envío no llegara a ninguna parte.
+  // Sin `<form>` y sin peticiones: la CSP de esta ruta declara
+  // `form-action 'none'`, así que un envío no llegaría a ninguna parte.
   it('no lleva ningún formulario', () => {
     expect(marcado).not.toMatch(/<form\b/i);
   });
