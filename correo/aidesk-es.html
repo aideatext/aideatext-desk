@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AIDesk</title>
+</head>
+<!--
+  ─────────────────────────────────────────────────────────────────────
+  ESTO NO ES HTML DE WEB. Es HTML de correo, que son cosas distintas.
+
+  Outlook para Windows no usa un motor de navegador: usa el de Word. No
+  entiende flexbox, ni grid, ni `float` fiable, ni hojas de estilo
+  externas, y descarta buena parte de lo que hay dentro de un <style>.
+  Gmail recorta el mensaje entero pasados unos 102 KB y añade un «ver
+  mensaje completo» que se lleva por delante el enlace de baja.
+
+  De ahi las tres reglas que gobiernan este archivo:
+    1. TABLAS para la maquetacion. No es nostalgia: es lo unico que
+       Outlook coloca igual que el resto.
+    2. ESTILOS EN LINEA. Nada de clases.
+    3. NINGUNA IMAGEN IMPRESCINDIBLE. La mayoria de los clientes las
+       bloquea por defecto, asi que el mensaje tiene que entenderse
+       entero sin ver una sola.
+
+  El ancho es 600px porque es lo que cabe en el panel de lectura de
+  Outlook sin desplazamiento horizontal.
+
+  Los marcadores {{NOMBRE}} y {{BAJA}} los sustituye el script de envio.
+  ─────────────────────────────────────────────────────────────────────
+-->
+<body style="margin:0;padding:0;background-color:#f6f6f4;">
+
+<!-- Preencabezado: la linea que la bandeja enseña junto al asunto, y que
+     decide si abren o no. Oculta en el cuerpo con el truco de siempre
+     —tamaño 0 y color del fondo—, mas los caracteres invisibles que
+     impiden que el cliente rellene el hueco con el texto que sigue. -->
+<div style="display:none;font-size:0;line-height:0;max-height:0;mso-hide:all;overflow:hidden;color:#f6f6f4;">
+  Convierte tus PDF sin subirlos a ningún servidor. Gratis y sin registro.
+  &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f6f6f4;">
+<tr>
+<td align="center" style="padding:24px 12px;">
+
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;background-color:#ffffff;border:1px solid #d9d9d9;border-radius:10px;">
+
+    <!-- Cabecera -->
+    <tr>
+      <td style="padding:28px 32px 8px 32px;font-family:Georgia,'Times New Roman',serif;">
+        <p style="margin:0 0 4px 0;font-size:26px;font-weight:bold;color:#1a1a1a;letter-spacing:.5px;">AIDesk</p>
+        <p style="margin:0;font-size:15px;color:#5b5b5b;line-height:1.5;">
+          El laboratorio de formatos digitales para la producción de tus contenidos
+        </p>
+      </td>
+    </tr>
+
+    <!-- Cuerpo -->
+    <tr>
+      <td style="padding:20px 32px 8px 32px;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.6;color:#1a1a1a;">
+
+        <p style="margin:0 0 16px 0;">{{SALUDO}}</p>
+
+        <p style="margin:0 0 16px 0;">
+          Te escribo porque coincidimos en alguno de los cursos que he dado.
+          Acabo de publicar una herramienta y creo que te puede ahorrar tiempo.
+        </p>
+
+        <p style="margin:0 0 16px 0;">
+          Se llama <strong>AIDesk</strong> y hace algo concreto: convierte un
+          PDF —una tesis, un informe, un expediente, un manual— en un archivo
+          de texto que ChatGPT, Claude o Gemini leen <strong>entero y bien
+          estructurado</strong>, con sus títulos, listas y tablas en su sitio.
+        </p>
+
+        <p style="margin:0 0 16px 0;">
+          Lo que la hace distinta: <strong>la conversión ocurre dentro de tu
+          navegador</strong>. Tu documento no se sube a ningún servidor, ni al
+          mío ni al de nadie. Y no te pido que me creas: la página trae un botón
+          que intenta enviar datos fuera delante de ti para que veas al
+          navegador impedirlo.
+        </p>
+
+        <p style="margin:0 0 20px 0;">
+          Es <strong>gratis</strong>, sin registro y sin límite de páginas.
+        </p>
+
+        <!-- Boton. Como tabla, con `bgcolor`: un <a> con `background` en
+             linea sale sin fondo en Outlook. -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+          <tr>
+            <td bgcolor="#14532d" style="border-radius:8px;">
+              <a href="https://aidesk.aideatext.ai/?utm_source=correo&utm_medium=email&utm_campaign=lanzamiento"
+                 style="display:inline-block;padding:13px 26px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">
+                Probar AIDesk &rarr;
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:0 0 16px 0;font-size:14px;color:#5b5b5b;line-height:1.6;">
+          O copia esta dirección:
+          <a href="https://aidesk.aideatext.ai/" style="color:#14532d;">aidesk.aideatext.ai</a>
+        </p>
+
+        <hr style="border:0;border-top:1px solid #d9d9d9;margin:22px 0;" />
+
+        <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;">
+          Hay dos cosas más que estoy montando —pasar documentos a audio para
+          escucharlos en el camino, y análisis de argumentación con grafos de
+          razonamiento semántico—, pero hoy solo quería enseñarte la primera,
+          que ya funciona.
+        </p>
+
+        <p style="margin:0 0 6px 0;font-size:15px;line-height:1.6;">
+          Si la pruebas y algo no te cuadra, respóndeme a este correo. Leo todo.
+        </p>
+
+        <p style="margin:18px 0 0 0;font-size:15px;">
+          Manuel Vargas Alegría<br />
+          <span style="color:#5b5b5b;font-size:14px;">AIdeaText · Programa NVIDIA Inception</span>
+        </p>
+
+      </td>
+    </tr>
+
+    <!-- Pie -->
+    <tr>
+      <td style="padding:18px 32px 26px 32px;border-top:1px solid #d9d9d9;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#5b5b5b;">
+        <p style="margin:0 0 8px 0;">
+          Recibes este correo porque participaste en un curso conmigo. No es una
+          lista comprada ni alquilada: si no recuerdas habernos cruzado, dímelo y
+          lo reviso.
+        </p>
+        <p style="margin:0;">
+          <a href="{{BAJA}}" style="color:#5b5b5b;text-decoration:underline;">No quiero recibir más correos</a>
+          · <a href="mailto:first.contact@aideatext.ai" style="color:#5b5b5b;text-decoration:underline;">first.contact@aideatext.ai</a>
+        </p>
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>

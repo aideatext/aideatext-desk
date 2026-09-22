@@ -1,0 +1,56 @@
+REGISTROS DNS PARA CLOUDFLARE
+Zona: aideatext.ai
+Objetivo: verificar correo.aideatext.ai para envio con Azure
+
+IMPORTANTE: los dos CNAME van con la NUBE GRIS (Proxy status = DNS only).
+Si Cloudflare los proxea, la firma DKIM no valida y el correo se va a Spam.
+
+--------------------------------------------------------------------
+1) TXT  -- verificacion del dominio
+   Type   : TXT
+   Name   : correo
+   Content: ms-domain-verification=9a65cb89-fc3d-41ba-89e9-d4b0f03b2cac
+   TTL    : Auto
+
+--------------------------------------------------------------------
+2) TXT  -- SPF
+   Type   : TXT
+   Name   : correo
+   Content: v=spf1 include:spf.protection.outlook.com -all
+   TTL    : Auto
+
+--------------------------------------------------------------------
+3) CNAME -- DKIM 1        <-- NUBE GRIS
+   Type   : CNAME
+   Name   : selector1-azurecomm-prod-net._domainkey.correo
+   Target : selector1-azurecomm-prod-net._domainkey.azurecomm.net
+   Proxy  : DNS only
+   TTL    : Auto
+
+--------------------------------------------------------------------
+4) CNAME -- DKIM 2        <-- NUBE GRIS
+   Type   : CNAME
+   Name   : selector2-azurecomm-prod-net._domainkey.correo
+   Target : selector2-azurecomm-prod-net._domainkey.azurecomm.net
+   Proxy  : DNS only
+   TTL    : Auto
+
+--------------------------------------------------------------------
+5) TXT  -- DMARC (recomendado)
+   Type   : TXT
+   Name   : _dmarc.correo
+   Content: v=DMARC1; p=none; rua=mailto:first.contact@aideatext.ai
+   TTL    : Auto
+--------------------------------------------------------------------
+
+NOTA SOBRE LOS NOMBRES
+Cloudflare añade solo la zona. Al escribir «correo» queda
+correo.aideatext.ai, y al escribir
+«selector1-azurecomm-prod-net._domainkey.correo» queda
+selector1-azurecomm-prod-net._domainkey.correo.aideatext.ai,
+que es lo que Azure busca.
+
+NO TOCAN NADA DE LO QUE YA FUNCIONA
+Ninguno pisa los registros del dominio principal: van todos colgando
+de «correo», que hoy no existe. El correo que ya recibes en
+first.contact@aideatext.ai sigue igual.

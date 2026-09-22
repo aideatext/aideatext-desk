@@ -1,0 +1,9 @@
+{
+  "name": "aidesk-correo",
+  "private": true,
+  "type": "module",
+  "description": "Plantillas y envio de la campaña de AIDesk.",
+  "dependencies": {
+    "@azure/communication-email": "^1.0.0"
+  }
+}

@@ -1,0 +1,36 @@
+{{SALUDO}}
+
+Te escribo porque coincidimos en alguno de los cursos que he dado. Acabo
+de publicar una herramienta y creo que te puede ahorrar tiempo.
+
+Se llama AIDesk y hace algo concreto: convierte un PDF —una tesis, un
+informe, un expediente, un manual— en un archivo de texto que ChatGPT,
+Claude o Gemini leen entero y bien estructurado, con sus títulos, listas
+y tablas en su sitio.
+
+Lo que la hace distinta: la conversión ocurre dentro de tu navegador. Tu
+documento no se sube a ningún servidor, ni al mío ni al de nadie. Y no te
+pido que me creas: la página trae un botón que intenta enviar datos fuera
+delante de ti para que veas al navegador impedirlo.
+
+Es gratis, sin registro y sin límite de páginas.
+
+    https://aidesk.aideatext.ai/?utm_source=correo&utm_medium=email&utm_campaign=lanzamiento
+
+Hay dos cosas más que estoy montando —pasar documentos a audio para
+escucharlos en el camino, y análisis de argumentación con grafos de
+razonamiento semántico—, pero hoy solo quería enseñarte la primera, que
+ya funciona.
+
+Si la pruebas y algo no te cuadra, respóndeme a este correo. Leo todo.
+
+Manuel Vargas Alegría
+AIdeaText · Programa NVIDIA Inception
+
+---
+Recibes este correo porque participaste en un curso conmigo. No es una
+lista comprada ni alquilada: si no recuerdas habernos cruzado, dímelo y
+lo reviso.
+
+Para no recibir más correos: {{BAJA}}
+Escríbeme: first.contact@aideatext.ai
