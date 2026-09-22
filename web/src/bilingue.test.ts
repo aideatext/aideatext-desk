@@ -313,3 +313,63 @@ describe('las tarjetas sociales', () => {
     }
   });
 });
+
+// ── El titular, declarado dos veces ──────────────────────────────────
+//
+// Cada página declara su titular en `og:title` y en `twitter:title`.
+// Editar uno y olvidar el otro deja la vista previa de WhatsApp diciendo
+// una cosa y la de X otra, y nadie lo ve porque nadie mira las dos.
+//
+// El `<title>` NO entra en la comparación, y es deliberado: es el texto
+// de la pestaña y legítimamente dice otra cosa —«Asesoría con grafos de
+// razonamiento semántico | AIDesk» frente a «Analiza tu documento con
+// grafos de razonamiento semántico»—. Exigir que coincidan seria inventar
+// una regla que el sitio nunca siguió.
+//
+// No se fija el TEXTO —es copy y cambia— sino que los dos COINCIDAN.
+describe('el titular no se contradice consigo mismo', () => {
+  // El atributo `content` va a menudo en la línea siguiente, así que el
+  // patrón tiene que cruzar el salto. Con `[^>]*?` en vez de un espacio
+  // literal, `og:description` daba cadena vacía y la prueba de «no está
+  // vacío» fallaba por el regex, no por la página.
+  const meta = (html: string, clave: string): string =>
+    html.match(
+      new RegExp(`<meta (?:property|name)="${clave}"[^>]*?content="([^"]+)"`)
+    )?.[1] ?? '';
+
+  const titulo = (html: string): string =>
+    html.match(/<title>([^<]+)<\/title>/)?.[1] ?? '';
+
+  it('og:title y twitter:title dicen lo mismo en las cuatro páginas', () => {
+    for (const p of PAGINAS) {
+      expect(`${p.nombre}: ${meta(p.html, 'og:title')}`).toBe(
+        `${p.nombre}: ${meta(p.html, 'twitter:title')}`
+      );
+    }
+  });
+
+  // Las DESCRIPCIONES no se comparan, y esto es un hallazgo, no un olvido:
+  // difieren a proposito. La de X es mas corta —«…nada se sube.» frente a
+  // «…nada se sube, y te lo demostramos en vivo.»— porque X trunca antes
+  // que Facebook. Exigir que coincidan habria roto una decision correcta.
+  // Lo que si se comprueba es que la de X no sea MAS LARGA que la otra:
+  // si alguien alarga la corta, se pierde el motivo de tenerla aparte.
+  it('la descripción de X no es más larga que la de Open Graph', () => {
+    for (const p of PAGINAS) {
+      const og = meta(p.html, 'og:description').length;
+      const tw = meta(p.html, 'twitter:description').length;
+      expect(`${p.nombre}: ${tw <= og}`).toBe(`${p.nombre}: true`);
+    }
+  });
+
+  it('ninguno se quedó vacío', () => {
+    for (const p of PAGINAS) {
+      for (const clave of ['og:title', 'twitter:title', 'og:description']) {
+        expect(`${p.nombre} ${clave}: ${meta(p.html, clave).length > 20}`).toBe(
+          `${p.nombre} ${clave}: true`
+        );
+      }
+      expect(titulo(p.html).length).toBeGreaterThan(20);
+    }
+  });
+});
