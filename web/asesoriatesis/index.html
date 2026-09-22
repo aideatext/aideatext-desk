@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+
+  <title>Asesoría — preparación de documentos académicos, administrativos y de proyectos | DESK</title>
+  <meta name="description"
+        content="Una primera reunión para conocer tu caso y fijar juntos el alcance, el tiempo y el precio del trabajo. 500 MXN, como una consulta médica." />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Logo32x32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/img/Logo64x64.png" />
+  <link rel="apple-touch-icon" href="/img/Logo_300x300.png" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AIdeaText" />
+  <meta property="og:locale" content="es_MX" />
+  <meta property="og:url" content="https://desk.aideatext.ai/asesoriatesis/" />
+  <meta property="og:title" content="Asesoría para tu tesis, tu proyecto o tu expediente" />
+  <meta property="og:description"
+        content="Una primera reunión para conocer tu caso y fijar juntos el alcance, el tiempo y el precio. 500 MXN, como una consulta médica." />
+  <meta property="og:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
+  <meta property="og:image:width" content="1920" />
+  <meta property="og:image:height" content="1080" />
+  <meta property="og:image:alt" content="AIdeaText" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Asesoría para tu tesis, tu proyecto o tu expediente" />
+  <meta name="twitter:description"
+        content="Una primera reunión para conocer tu caso y fijar juntos el alcance, el tiempo y el precio." />
+  <meta name="twitter:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
+  <meta name="twitter:image:alt" content="AIdeaText" />
+
+  <!-- Ni una referencia externa, igual que en la portada: la CSP las
+       bloquearia, y ademas el argumento del sitio es que nada sale de
+       aqui. Tipografias del sistema e imagenes propias.
+
+       ESTA PAGINA SI SE DESPLAZA, y es deliberado. La portada no lo hace
+       porque es un panel de herramientas que tiene que caber de un
+       vistazo; esta es un texto que se lee, y forzarla a caber en 640px
+       solo produciria letra chica. La regla de «sin scroll» era para la
+       portada, no un dogma del sitio. -->
+  <style>
+    :root {
+      --tinta: #1a1a1a;
+      --tenue: #5b5b5b;
+      --linea: #d9d9d9;
+      --fondo: #ffffff;
+      --papel: #f6f6f4;
+      --acento: #14532d;
+      --acento-suave: #eef5f0;
+      --duda: #6b4e00;
+      --duda-suave: #fdf6e3;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      color: var(--tinta);
+      background: var(--fondo);
+      font-size: 16px;
+      line-height: 1.55;
+      margin: 0;
+      padding: 0 clamp(.9rem, 4vw, 1.5rem);
+    }
+
+    .envoltura { width: 100%; max-width: 760px; margin-inline: auto; }
+
+    a { color: var(--acento); }
+
+    /* -- Encabezado -------------------------------------------- */
+
+    .barra {
+      display: flex;
+      align-items: center;
+      gap: .5rem 1.4rem;
+      flex-wrap: wrap;
+      padding: .7rem 0 .6rem;
+      border-bottom: 2px solid var(--linea);
+    }
+
+    .logos { display: flex; align-items: center; gap: 1rem; flex: none; }
+    .logos .aideatext { width: 62px; height: 62px; display: block; }
+    .logos .nvidia { height: 62px; width: auto; display: block; }
+
+    .volver {
+      font-size: .9rem;
+      font-weight: 600;
+      text-decoration: none;
+      margin-left: auto;
+    }
+
+    .volver:hover { text-decoration: underline; }
+
+    /* -- Texto ------------------------------------------------- */
+
+    h1 {
+      font-size: clamp(1.35rem, 3.4vw, 1.8rem);
+      line-height: 1.22;
+      letter-spacing: -.01em;
+      margin: 1.4rem 0 .5rem;
+    }
+
+    .entradilla {
+      font-size: 1.05rem;
+      color: var(--tenue);
+      margin: 0 0 1.4rem;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      letter-spacing: -.01em;
+      margin: 1.6rem 0 .4rem;
+    }
+
+    p { margin: 0 0 .7rem; }
+
+    ol { margin: 0 0 .7rem; padding-left: 1.3rem; }
+    li { margin-bottom: .45rem; }
+
+    /* -- El bloque de compra ----------------------------------- */
+
+    .compra {
+      margin: 1.5rem 0;
+      padding: 1.1rem 1.2rem;
+      border: 2px solid var(--acento);
+      border-radius: 12px;
+      background: var(--acento-suave);
+    }
+
+    .compra .precio {
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin: 0;
+    }
+
+    .compra .porque { margin: .1rem 0 .8rem; color: var(--tenue); }
+
+    .boton {
+      display: inline-block;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--acento);
+      border: 1px solid var(--acento);
+      border-radius: 8px;
+      padding: .65rem 1.3rem;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .boton:hover { background: #0e3d21; color: #fff; }
+
+    .compra .despues {
+      margin: .8rem 0 0;
+      font-size: .9rem;
+      color: var(--tenue);
+    }
+
+    /* -- El aviso que esta pagina NO puede esconder ------------- */
+
+    /* La portada entera se sostiene sobre que tu archivo no sale de tu
+       navegador. Este servicio es lo contrario: una persona lee tu
+       documento, porque no hay forma de asesorarte sin leerlo. Si ese
+       cambio no se dice aqui, en grande y antes del boton, la pagina
+       estaria usando la confianza que gana la portada para vender
+       justamente el caso donde esa promesa no aplica. */
+    .aviso {
+      margin: 1.5rem 0;
+      padding: .9rem 1rem;
+      border: 1px solid #e6d7a8;
+      border-radius: 12px;
+      background: var(--duda-suave);
+      color: var(--duda);
+    }
+
+    .aviso h2 { margin-top: 0; color: var(--duda); }
+    .aviso p:last-child { margin-bottom: 0; }
+
+    /* -- Pie --------------------------------------------------- */
+
+    footer {
+      margin-top: 2.2rem;
+      padding: .9rem 0 1.4rem;
+      border-top: 1px solid var(--linea);
+      font-size: .85rem;
+      color: var(--tenue);
+    }
+
+    footer .fila {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem 1.1rem;
+      margin-bottom: .5rem;
+    }
+
+    .marca { margin: 0; font-size: .78rem; }
+  </style>
+</head>
+<body>
+
+  <div class="envoltura">
+
+    <header class="barra">
+      <span class="logos">
+        <img class="aideatext" src="/img/Logo_300x300.png" width="62" height="62"
+             alt="AIdeaText" />
+        <img class="nvidia" src="/img/nvidia-inception-color.svg" width="144" height="62"
+             alt="AIdeaText es miembro del programa NVIDIA Inception" />
+      </span>
+      <a class="volver" href="/">← Volver a DESK</a>
+    </header>
+
+    <main>
+      <h1>Asesoría: preparación de documentos académicos, administrativos y de proyectos</h1>
+
+      <p class="entradilla">
+        Empieza con una reunión para conocer tu caso. De ahí sale el alcance,
+        el tiempo y el precio del trabajo —y recién entonces decides si
+        seguimos.
+      </p>
+
+      <h2>Cómo funciona</h2>
+
+      <ol>
+        <li>
+          <strong>Agendas la primera reunión.</strong> Nos cuentas qué tienes
+          entre manos: una tesis, un proyecto, un expediente, un informe.
+        </li>
+        <li>
+          <strong>Definimos el alcance ahí mismo.</strong> Cuántas reuniones
+          hacen falta, cuántos documentos hay que revisar, en qué plazo, y
+          cualquier otra cosa que cambie el trabajo.
+        </li>
+        <li>
+          <strong>Sale un precio cerrado.</strong> Uno solo, por el trabajo
+          completo, acordado antes de empezar. Sin sorpresas después.
+        </li>
+        <li>
+          <strong>Decides.</strong> Si no seguimos, te quedas igual con el
+          diagnóstico de la primera reunión: qué le falta a tu documento y
+          por dónde se empieza.
+        </li>
+      </ol>
+
+      <div class="aviso">
+        <h2>Aquí sí leemos tus documentos</h2>
+        <p>
+          En <a href="/">la portada de DESK</a> el archivo no sale de tu
+          navegador, y esa página existe para que puedas comprobarlo. Este
+          servicio es lo contrario, y conviene decirlo claro:
+          <strong>aquí una persona lee lo que escribiste</strong>, porque no
+          hay manera de asesorarte sin leerlo.
+        </p>
+        <p>
+          Nos mandas solo lo que haga falta para el trabajo acordado. No lo
+          publicamos, no lo compartimos con nadie y no lo usamos para
+          entrenar nada. Cuando terminamos, lo borramos —y si prefieres que
+          lo borremos antes, lo borramos antes: basta con que lo pidas.
+        </p>
+        <p>
+          Si esto te incomoda, no lo contrates. Lo demás de DESK sigue
+          funcionando sin que nos envíes nada.
+        </p>
+      </div>
+
+      <!-- El aviso va ANTES del bloque de compra, no después. Abajo se leía
+           igual de bien, pero se leía después de haber pagado — y es
+           justamente la información que puede hacer que alguien decida no
+           contratar. Una advertencia que llega tarde no es una
+           advertencia. `paginaAsesoria.test.ts` fija este orden. -->
+      <div class="compra">
+        <p class="precio">500 MXN</p>
+        <p class="porque">
+          La primera reunión, como una consulta médica: se paga la consulta,
+          no el diagnóstico gratis de quien no tiene tiempo de dártelo bien.
+        </p>
+        <a class="boton" href="https://buy.stripe.com/dRm9AT2Th6Y2azUbDd5c406">
+          Agendar la primera reunión
+        </a>
+        <p class="despues">
+          Al pagar, Stripe nos deja tu correo y te escribimos para cuadrar
+          día y hora. Pagos con tarjeta o en OXXO.
+        </p>
+      </div>
+
+      <h2>Qué no es</h2>
+
+      <p>
+        No escribimos tu tesis por ti, y no existe el paquete de «te la dejo
+        lista». Lo que hacemos es leer lo que ya tienes, decirte qué se
+        sostiene y qué no, y trabajar contigo para que lo defiendas tú.
+      </p>
+
+      <p>
+        ¿Dudas antes de pagar?
+        <a href="mailto:first.contact.desk@aideatext.ai?subject=Consulta%20sobre%20la%20asesor%C3%ADa">first.contact.desk@aideatext.ai</a>
+      </p>
+    </main>
+
+    <footer>
+      <div class="fila">
+        <a href="/">DESK</a>
+        <a href="https://github.com/aideatext/aideatext-desk">Código del proyecto</a>
+        <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos</a>
+        <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>
+      </div>
+      <p class="marca">
+        © 2025 NVIDIA, the NVIDIA logo are trademarks and/or registered
+        trademarks of NVIDIA Corporation in the U.S. and other countries.
+      </p>
+    </footer>
+
+  </div>
+
+</body>
+</html>
