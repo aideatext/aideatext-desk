@@ -864,3 +864,31 @@ footer p { margin: 0; }
      pagina a la que lleva el boton. */
   .banda .argumento { display: none; }
 }
+
+/* -- Contador de conversiones ------------------------------------- */
+
+/* Sale bajo la zona de arrastre y sólo cuando hay cifra que enseñar:
+   `renderContador` devuelve '' por debajo del umbral, así que el hueco
+   queda literalmente vacío y no ocupa nada. */
+.contador {
+  margin: .45rem 0 0;
+  padding: .35rem .55rem;
+  border-left: 3px solid var(--acento);
+  background: var(--acento-suave);
+  font-size: .85rem;
+}
+
+#contador:empty { display: none; }
+
+/* El cuerpo de la petición, tal cual viaja. */
+.envio {
+  margin: .4rem 0 0;
+  padding: .45rem .6rem;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  background: var(--papel);
+  font-size: .82rem;
+  overflow-x: auto;
+}
+
+#resultado-envio:empty { display: none; }

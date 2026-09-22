@@ -120,6 +120,19 @@ export const es = {
     siQuieresQueLoRevisemos: `Si quieres que lo revisemos contigo, escríbenos a ${correo}`,
   },
 
+  contador: {
+    convertidos: (n) =>
+      `<strong>${n} documentos</strong> convertidos aquí, sin que ninguno ` +
+      'saliera del navegador de su dueño.',
+    loUnicoQueEnviamos: 'Lo único que sí enviamos',
+    queEnviamos:
+      'Al terminar una conversión, tu navegador suma 1 a un contador ' +
+      'público. Va <strong>sin tu archivo, sin tu nombre y sin tu IP</strong>: ' +
+      'es literalmente un +1, con el cuerpo de la petición vacío. Puedes ' +
+      'verlo en la pestaña Red, junto a la ausencia de cualquier subida.',
+    verQueSeEnvia: 'Ver qué se envía',
+  },
+
   tarifa: {
     noEstaEnLaLista: `¿Tu institución no aparece? Escríbenos a ${CONTACTO} y la agregamos.`,
     institucional: (corto, largo, horas, porHora) =>

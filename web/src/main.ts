@@ -6,6 +6,7 @@ import { extraerTextoCrudo } from './pdf/textoCrudo';
 import { renderDiagnosis } from './ui/report';
 import { renderAhorro } from './ui/tokens';
 import { textos } from './textos';
+import { sumarConversion } from './ui/contador';
 
 // El worker se sirve desde nuestro propio dominio, no desde un CDN:
 // una peticion externa contradiria la garantia de "nada sale de aqui".
@@ -90,6 +91,10 @@ async function procesar(file: File): Promise<void> {
         try {
           const r = await pdfToMarkdown(data);
           descargar(r.markdown, file.name.replace(/\.pdf$/i, '') + '.md');
+          // DESPUES de la descarga y sin esperarla. El contador es nuestro,
+          // no del usuario: si el endpoint esta caido o un bloqueador lo
+          // corta, su Markdown ya esta en su carpeta y no se entera.
+          sumarConversion();
           await mostrarAhorro(data, r.markdown, r.pagesScanned.length);
         } catch {
           const t = textos();

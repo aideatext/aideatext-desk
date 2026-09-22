@@ -1,0 +1,13 @@
+{
+  "name": "aidesk-api",
+  "version": "1.0.0",
+  "description": "API de AIDesk. Hoy sólo el contador público de conversiones.",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.0",
+    "@azure/data-tables": "^13.3.0"
+  }
+}

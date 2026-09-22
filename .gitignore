@@ -51,3 +51,16 @@ npm-debug.log*
 
 # Workspace de ejecucion SDD (scratch, no versionado)
 .superpowers/
+
+# ─────────────────────────────────────────────────────────────────────
+# LISTAS DE CORREO. NUNCA AL REPOSITORIO.
+#
+# Este repositorio es PUBLICO. `EMAILS/` contiene direcciones de personas
+# reales —participantes de cursos, contactos profesionales—: publicarlas
+# seria entregarselas a cualquier raspador, y ademas es un incidente de
+# datos personales bajo la LFPDPPP, no un descuido de git.
+#
+# Estuvo a punto de entrar en un `git add -A`.
+# ─────────────────────────────────────────────────────────────────────
+EMAILS/
+*.csv

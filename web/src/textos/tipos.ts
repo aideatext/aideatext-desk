@@ -100,6 +100,16 @@ export interface Textos {
     siQuieresQueLoRevisemos: string;
   };
 
+  /** El contador público de conversiones. */
+  contador: {
+    /** «1,247 documentos convertidos aquí, sin que ninguno saliera…» */
+    convertidos(n: string): string;
+    /** Título de la sección nueva de «Seguridad». */
+    loUnicoQueEnviamos: string;
+    queEnviamos: string;
+    verQueSeEnvia: string;
+  };
+
   /** Comprobador de tarifa institucional. */
   tarifa: {
     noEstaEnLaLista: string;

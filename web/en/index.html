@@ -142,6 +142,7 @@
         </p>
       </div>
 
+      <div id="contador"></div>
       <div id="resultado"></div>
       <div id="ahorro"></div>
     </div>
@@ -345,6 +346,17 @@
 
           <div id="resultado-csp"></div>
 
+          <h3>The one thing we do send</h3>
+          <p>
+            When a conversion finishes, your browser adds 1 to a public
+            counter. It goes <strong>without your file, without your name
+            and without your IP</strong>: it is literally a +1, with an
+            empty request body. You can see it in the Network tab, next to
+            the absence of any upload.
+          </p>
+          <button id="ver-envio" type="button">See what is sent</button>
+          <div id="resultado-envio"></div>
+
           <h3>How to check it yourself</h3>
           <ol>
             <li>
@@ -399,5 +411,6 @@
   <script type="module" src="/src/main.ts"></script>
   <script type="module" src="/src/autocomprobacion.entry.ts"></script>
   <script type="module" src="/src/listaDeEspera.entry.ts"></script>
+  <script type="module" src="/src/contador.entry.ts"></script>
 </body>
 </html>

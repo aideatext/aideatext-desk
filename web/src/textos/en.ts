@@ -120,6 +120,19 @@ export const en = {
     siQuieresQueLoRevisemos: `If you want us to look at it with you, write to ${correo}`,
   },
 
+  contador: {
+    convertidos: (n) =>
+      `<strong>${n} documents</strong> converted here, without a single one ` +
+      "leaving its owner's browser.",
+    loUnicoQueEnviamos: 'The one thing we do send',
+    queEnviamos:
+      'When a conversion finishes, your browser adds 1 to a public counter. ' +
+      'It goes <strong>without your file, without your name and without ' +
+      'your IP</strong>: it is literally a +1, with an empty request body. ' +
+      'You can see it in the Network tab, next to the absence of any upload.',
+    verQueSeEnvia: 'See what is sent',
+  },
+
   tarifa: {
     noEstaEnLaLista: `Institution not listed? Write to ${CONTACTO} and we will add it.`,
     institucional: (corto, largo, horas, porHora) =>

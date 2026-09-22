@@ -221,6 +221,7 @@
         </p>
       </div>
 
+      <div id="contador"></div>
       <div id="resultado"></div>
       <div id="ahorro"></div>
     </div>
@@ -484,6 +485,17 @@
 
           <div id="resultado-csp"></div>
 
+          <h3>Lo único que sí enviamos</h3>
+          <p>
+            Al terminar una conversión, tu navegador suma 1 a un contador
+            público. Va <strong>sin tu archivo, sin tu nombre y sin tu
+            IP</strong>: es literalmente un +1, con el cuerpo de la petición
+            vacío. Puedes verlo en la pestaña Red, junto a la ausencia de
+            cualquier subida.
+          </p>
+          <button id="ver-envio" type="button">Ver qué se envía</button>
+          <div id="resultado-envio"></div>
+
           <h3>Cómo comprobarlo por tu cuenta</h3>
           <ol>
             <li>
@@ -545,5 +557,6 @@
   <script type="module" src="/src/main.ts"></script>
   <script type="module" src="/src/autocomprobacion.entry.ts"></script>
   <script type="module" src="/src/listaDeEspera.entry.ts"></script>
+  <script type="module" src="/src/contador.entry.ts"></script>
 </body>
 </html>
