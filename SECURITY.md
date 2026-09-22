@@ -111,7 +111,7 @@ intentamos construir.
 
 ## Contacto
 
-- **Reportes de seguridad:** mv@aideatext.com
+- **Reportes de seguridad:** manuel.var.ale@aideatext.ai
 - **Casos que exceden los límites del sistema:** first.contact@aideatext.ai
 
 Si tu archivo es demasiado grande, tiene un formato no soportado, o tu investigación
