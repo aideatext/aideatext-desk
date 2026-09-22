@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light" />
 
-  <title>Asesoría — preparación de documentos académicos, administrativos y de proyectos | DESK</title>
+  <title>Asesoría — preparación de documentos académicos, administrativos y de proyectos | AIDesk</title>
   <meta name="description"
         content="Una primera reunión para conocer tu caso y fijar juntos el alcance, el tiempo y el precio del trabajo. 500 MXN, como una consulta médica." />
 
@@ -201,6 +201,26 @@
     }
 
     .marca { margin: 0; font-size: .78rem; }
+
+    /* ===== Telefono =====
+       Esta pagina ya se desplazaba y no tenia ninguna regla movil, asi que
+       heredaba medidas pensadas para escritorio: los logotipos a 62px se
+       comian un tercio de la primera pantalla, y «Volver» se iba solo a
+       una linea alineada a la derecha por el `margin-left: auto`, que en
+       una barra envuelta deja de significar «al otro extremo» y pasa a
+       significar «una fila para mi solo». */
+    @media (max-width: 560px) {
+      .logos .aideatext { width: 48px; height: 48px; }
+      .logos .nvidia { height: 48px; }
+
+      .volver { margin-left: 0; }
+
+      /* 44px de area tactil, el minimo de Apple y Google. */
+      .boton { min-height: 44px; display: inline-flex; align-items: center; }
+
+      .compra { padding: .9rem 1rem; }
+      .compra .precio { font-size: 1.5rem; }
+    }
   </style>
 </head>
 <body>
@@ -214,7 +234,7 @@
         <img class="nvidia" src="/img/nvidia-inception-color.svg" width="144" height="62"
              alt="AIdeaText es miembro del programa NVIDIA Inception" />
       </span>
-      <a class="volver" href="/">← Volver a DESK</a>
+      <a class="volver" href="/">← Volver a AIDesk</a>
     </header>
 
     <main>
@@ -252,7 +272,7 @@
       <div class="aviso">
         <h2>Aquí sí leemos tus documentos</h2>
         <p>
-          En <a href="/">la portada de DESK</a> el archivo no sale de tu
+          En <a href="/">la portada de AIDesk</a> el archivo no sale de tu
           navegador, y esa página existe para que puedas comprobarlo. Este
           servicio es lo contrario, y conviene decirlo claro:
           <strong>aquí una persona lee lo que escribiste</strong>, porque no
@@ -265,7 +285,7 @@
           lo borremos antes, lo borramos antes: basta con que lo pidas.
         </p>
         <p>
-          Si esto te incomoda, no lo contrates. Lo demás de DESK sigue
+          Si esto te incomoda, no lo contrates. Lo demás de AIDesk sigue
           funcionando sin que nos envíes nada.
         </p>
       </div>
@@ -280,6 +300,8 @@
         <p class="porque">
           La primera reunión, como una consulta médica: se paga la consulta,
           no el diagnóstico gratis de quien no tiene tiempo de dártelo bien.
+          <strong>Si después nos contratas, estos 500 se descuentan del
+          trabajo.</strong>
         </p>
         <a class="boton" href="https://buy.stripe.com/dRm9AT2Th6Y2azUbDd5c406">
           Agendar la primera reunión
@@ -306,7 +328,7 @@
 
     <footer>
       <div class="fila">
-        <a href="/">DESK</a>
+        <a href="/">AIDesk</a>
         <a href="https://github.com/aideatext/aideatext-desk">Código del proyecto</a>
         <a href="https://github.com/aideatext/aideatext-desk/blob/main/SECURITY.md">Tratamiento de datos</a>
         <a href="mailto:first.contact.desk@aideatext.ai">first.contact.desk@aideatext.ai</a>

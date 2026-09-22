@@ -304,11 +304,28 @@ describe('encabezado y pie', () => {
     for (const alto of altos) expect(alto).toBeGreaterThanOrEqual(56);
   });
 
-  it('lleva DESK con su frase y la promesa de la especificacion', () => {
-    expect(html).toContain('>DESK<');
-    expect(texto).toContain(
-      'Ningún límite es un «no se puede»: escríbenos y lo resolvemos.'
+  it('lleva AIDesk con su frase y su pertenencia al ecosistema', () => {
+    const barra = html.match(/<header class="barra">([\s\S]*?)<\/header>/)?.[1] ?? '';
+    expect(barra).toContain('>AIDesk<');
+    // `\s*` entre las dos mitades porque el nombre y la frase viven en
+    // `<span>` distintos: quitar las etiquetas deja un espacio donde el
+    // lector no ve ninguno. Lo que se fija es el texto, no el marcado.
+    expect(prosa(barra)).toMatch(
+      /AIDesk\s*, el taller de formatos de tus documentos\./
     );
+    expect(prosa(barra)).toMatch(
+      /Una micro solución del ecosistema de\s*AIdeaText/
+    );
+  });
+
+  // El eslogan «Ningún límite es un "no se puede"» estuvo aquí desde la
+  // primera versión y el dueño lo retiró. Esta prueba impide que vuelva
+  // por inercia al editar la cabecera — pero NO afloja la regla que la
+  // frase enunciaba: `report.ts` e `instituciones.ts` siguen sin poder
+  // responder «no se puede», y sus propias pruebas lo fijan. Se retiró el
+  // eslogan, no el principio.
+  it('ya no lleva el eslogan retirado', () => {
+    expect(texto).not.toContain('Ningún límite es un «no se puede»');
   });
 
   it('el pie lleva los seis enlaces de la especificacion', () => {

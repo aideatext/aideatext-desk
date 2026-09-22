@@ -71,6 +71,13 @@ describe('la página de asesoría', () => {
     expect(texto).toMatch(/No escribimos tu tesis por ti/);
   });
 
+  // El descuento es un compromiso comercial, no un adorno: quien paga los
+  // 500 lo lee y cuenta con el. Si desaparece del texto sin que nadie se
+  // entere, la pagina deja de prometer algo que alguien ya compro.
+  it('dice que los 500 se descuentan si contratan', () => {
+    expect(texto).toMatch(/se descuentan del trabajo/);
+  });
+
   // Sin `<form>` y sin peticiones: la misma CSP global cubre esta ruta, y
   // `form-action 'none'` haría que un envío no llegara a ninguna parte.
   it('no lleva ningún formulario', () => {

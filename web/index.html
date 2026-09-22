@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light" />
 
-  <title>DESK — Pasa tu tesis a la IA completa, sin subirla a ningún servidor</title>
+  <title>AIDesk — Pasa tu tesis a la IA completa, sin subirla a ningún servidor</title>
   <meta name="description"
-        content="DESK convierte tu PDF en un archivo de texto (.md) que ChatGPT, Claude o Gemini leen entero. La conversión ocurre en tu navegador: el archivo no se sube a ningún servidor, y puedes comprobarlo tú mismo." />
+        content="AIDesk convierte tu PDF en un archivo de texto (.md) que ChatGPT, Claude o Gemini leen entero. La conversión ocurre en tu navegador: el archivo no se sube a ningún servidor, y puedes comprobarlo tú mismo." />
 
   <!-- Iconos: el logotipo de AIdeaText, servido desde este dominio.
        `img-src 'self' data:` de la CSP ya permite imagenes locales; no hizo
@@ -38,7 +38,7 @@
   <meta property="og:url" content="https://desk.aideatext.ai/" />
   <meta property="og:title" content="Pasa tu tesis a la IA completa, sin subirla a ningún servidor" />
   <meta property="og:description"
-        content="DESK convierte tu PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube, y te lo demostramos en vivo." />
+        content="AIDesk convierte tu PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube, y te lo demostramos en vivo." />
   <meta property="og:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
   <meta property="og:image:width" content="1920" />
   <meta property="og:image:height" content="1080" />
@@ -47,7 +47,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Pasa tu tesis a la IA completa, sin subirla a ningún servidor" />
   <meta name="twitter:description"
-        content="DESK convierte tu PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube." />
+        content="AIDesk convierte tu PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube." />
   <meta name="twitter:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
   <meta name="twitter:image:alt" content="AIdeaText" />
 
@@ -176,7 +176,14 @@
       display: block;
     }
 
-    .titulo { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+    /* BLOQUE, no flex. El titulo es UNA frase —«AIDesk, el taller de
+       formatos de tus documentos»— y con `display: flex` sus dos mitades
+       eran dos cajas que se repartian el ancho: en un telefono de 390px
+       rompia entre ellas y la segunda linea empezaba por una coma. Como
+       texto normal, parte por donde parten las frases.
+       Tampoco lleva `gap`: medio rem entre el nombre y su propia coma se
+       leia como una errata. */
+    .titulo { display: block; }
     .titulo .nombre { font-weight: 800; letter-spacing: .05em; }
     .titulo .frase { color: var(--tenue); font-size: 1rem; }
 
@@ -551,17 +558,54 @@
         height: auto;
         overflow: visible;
         padding-bottom: 2rem;
+        /* TAMAÑO FIJO, no ligado al alto. El `clamp(...vh...)` de arriba
+           existe porque en escritorio la pagina cabe entera sin scroll:
+           una ventana baja tiene que apretar. Aqui la pagina SE DESPLAZA,
+           asi que un telefono de 640px de alto no necesita letra mas
+           pequeña — necesita letra legible con el brazo estirado. Con la
+           regla de escritorio caia a 14.5px, que es justo al reves de lo
+           que hace falta. */
+        font-size: 16px;
       }
-      .columnas { grid-template-columns: 1fr; }
+
+      .columnas { grid-template-columns: 1fr; gap: 0; }
       .col { overflow: visible; padding-right: 0; }
+
       .col + .col {
         border-left: 0;
         border-top: 1px solid var(--linea);
         padding-left: 0;
         padding-top: .8rem;
       }
+
       footer { max-height: none; overflow: visible; }
+
+      /* 44px es el area tactil minima que piden tanto Apple como Google.
+         El boton de la lista de espera se quedaba en 39: se puede pulsar,
+         pero falla lo justo para que la gente lo intente dos veces. */
+      .boton, button {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Safari en iOS hace zoom sobre cualquier campo de menos de 16px al
+         enfocarlo, y al hacerlo descoloca toda la pagina. Es la causa mas
+         comun de que un formulario «salte» en un iPhone. */
+      .tarifa input { font-size: 16px; min-height: 44px; }
+
+      /* Los logotipos se quedan en su tamaño legible, pero en una pantalla
+         estrecha no pueden comerse media altura util. */
+      .logos .aideatext { width: 48px; height: 48px; }
+      .logos .nvidia { height: 48px; }
+
+      /* En una columna a pantalla completa, dos botones por fila siguen
+         cabiendo y evitan una torre de cuatro. Por debajo de 380px se
+         apilan solos: `flex-wrap` ya lo resuelve. */
+      .comprar .boton { flex: 1 1 42%; }
     }
+
 
     /* Valvula de escape para ventanas muy bajas (o zoom muy alto): por
        debajo de 520px de alto ya no cabe nada honestamente, y atrapar el
@@ -589,12 +633,20 @@
            alt="AIdeaText es miembro del programa NVIDIA Inception" />
     </span>
 
+    <!-- «Ningún límite es un "no se puede": escríbenos y lo resolvemos»
+         estaba aquí desde la primera versión —era la línea 3 de
+         DESK-USER-INTERFACE.md— y el dueño la retiró. La REGLA que esa
+         frase enunciaba sigue viva en el código: ninguna rama de
+         `report.ts` ni de `instituciones.ts` responde «no se puede», y hay
+         pruebas que lo fijan. Lo que se va es el eslogan, no el principio. -->
     <h1 class="titulo">
-      <span class="nombre">DESK</span>
-      <span class="frase">— el taller de formatos de tu tesis: conviértela, escúchala, tradúcela.</span>
+      <span class="nombre">AIDesk</span><span class="frase">, el taller de formatos de tus documentos.</span>
     </h1>
 
-    <p class="lema">Ningún límite es un «no se puede»: escríbenos y lo resolvemos.</p>
+    <p class="lema">
+      Una micro solución del ecosistema de
+      <a href="https://aideatext.ai">AIdeaText</a>
+    </p>
   </header>
 
   <main class="columnas">
@@ -816,7 +868,7 @@
         <summary>Cómo funciona</summary>
         <div class="plegado">
           <p>
-            Tu PDF se abre con PDF.js dentro de tu navegador. DESK recorre
+            Tu PDF se abre con PDF.js dentro de tu navegador. AIDesk recorre
             cada página, mide cuánto texto extraíble tiene y decide si es
             texto, un escaneo o una página en blanco. Con las páginas de
             texto arma un Markdown con un encabezado por página, y te lo
@@ -889,7 +941,7 @@
             en los programas NVIDIA Inception y AWS Startups.
           </p>
           <p>
-            DESK nació de una observación simple: los tesistas no necesitan
+            AIDesk nació de una observación simple: los tesistas no necesitan
             otra herramienta de IA. Necesitan que su trabajo inédito no
             termine en el servidor de un desconocido.
           </p>
