@@ -37,19 +37,26 @@ describe('metadatos sociales', () => {
   // enlace compartido -- y en Mexico y Peru ese enlace viaja sobre todo por
   // WhatsApp.
   it('la imagen de Open Graph es una URL absoluta', () => {
-    expect(og('image')).toBe('https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg');
+    expect(og('image')).toBe(
+      'https://aidesk.aideatext.ai/img/AIDesk_Card_v1_SP.png'
+    );
   });
 
   it('declara tambien la tarjeta de Twitter/X', () => {
     expect(twitter('card')).toBe('summary_large_image');
     expect(twitter('image')).toBe(
-      'https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg'
+      'https://aidesk.aideatext.ai/img/AIDesk_Card_v1_SP.png'
     );
     expect(twitter('title')).toBeTruthy();
   });
 
-  it('deja escrito que la tarjeta es generica y esta pendiente', () => {
-    expect(html).toContain('PENDIENTE');
+  // Esta prueba estuvo al reves: mientras la tarjeta fue la generica de
+  // AIdeaText, exigia que el HTML dijera PENDIENTE para que la deuda no se
+  // olvidara. Ya hay tarjeta propia por idioma, asi que lo que hay que
+  // vigilar ahora es que no se vuelva atras.
+  it('ya no usa la tarjeta generica de AIdeaText', () => {
+    expect(html).not.toContain('AIdeaTextCard');
+    expect(html).not.toContain('AIdeaText_Cover');
   });
 });
 

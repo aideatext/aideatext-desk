@@ -37,8 +37,8 @@
        Open Graph cubre WhatsApp, Facebook e Instagram: Instagram no tiene
        etiquetas propias, lee Open Graph. Para Mexico y Peru, WhatsApp es
        probablemente el canal que mas enlaces mueve entre quienes escriben,
-       asi que
-       estas cuatro lineas importan mas que la landing entera en escritorio.
+       asi que estas cuatro lineas importan mas que la landing entera en
+       escritorio.
 
        Hablan solo del servicio 1, que es el unico construido. Anunciar el
        audio o la traduccion en la tarjeta que viaja por WhatsApp seria
@@ -47,9 +47,12 @@
        La URL de og:image es ABSOLUTA a proposito: ningun raspador social
        resuelve rutas relativas.
 
-       PENDIENTE: AIdeaTextCard.jpg es la tarjeta generica de AIdeaText, no
-       una tarjeta de DESK. Se usa porque es la que existe; hace falta una
-       propia con el titular de esta pagina. No se invento ninguna. -->
+       La tarjeta es la PROPIA, por idioma: `AIDesk_Card_v1_SP.png` aqui y
+       `AIDesk_Card_v1_EN.png` en `/en/`. Sustituyen a la generica de
+       AIdeaText que se uso mientras no existia otra. Las medidas
+       declaradas —1057x595— son las reales del PNG, leidas de su cabecera:
+       si no coinciden, el raspador reserva una caja de otra proporcion y
+       la imagen sale recortada. -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AIdeaText" />
   <meta property="og:locale" content="es_MX" />
@@ -57,17 +60,18 @@
   <meta property="og:title" content="Pasa tus documentos a la IA completos, sin subirlos a ningún servidor" />
   <meta property="og:description"
         content="AIDesk convierte cualquier PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube, y te lo demostramos en vivo." />
-  <meta property="og:image" content="https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg" />
-  <meta property="og:image:width" content="1920" />
-  <meta property="og:image:height" content="1080" />
-  <meta property="og:image:alt" content="AIdeaText" />
+  <meta property="og:image" content="https://aidesk.aideatext.ai/img/AIDesk_Card_v1_SP.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1057" />
+  <meta property="og:image:height" content="595" />
+  <meta property="og:image:alt" content="AIDesk — el taller de formatos de tus documentos" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Pasa tus documentos a la IA completos, sin subirlos a ningún servidor" />
   <meta name="twitter:description"
         content="AIDesk convierte cualquier PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube." />
-  <meta name="twitter:image" content="https://aidesk.aideatext.ai/img/AIdeaTextCard.jpg" />
-  <meta name="twitter:image:alt" content="AIdeaText" />
+  <meta name="twitter:image" content="https://aidesk.aideatext.ai/img/AIDesk_Card_v1_SP.png" />
+  <meta name="twitter:image:alt" content="AIDesk — el taller de formatos de tus documentos" />
 
   <!-- Ni una sola referencia externa en toda esta pagina: ni tipografia de
        Google, ni CDN, ni analitica, ni imagen remota. Dos razones, y la
@@ -502,9 +506,9 @@
             administrador nacional del SIAGIE en Perú, el sistema de
             información educativa que atendía a 7 millones de estudiantes y
             95,000 instituciones. Fundador de AIdeaText, plataforma de
-            análisis semántico para escritura académica, con piloto en la
-            Universidad Femenina del Sagrado Corazón (UNIFE) y participación
-            en los programas NVIDIA Inception y AWS Startups.
+            análisis semántico para escritura académica, con piloto en una
+            universidad peruana y participación en los programas NVIDIA
+            Inception y AWS Startups.
           </p>
           <p>
             AIDesk nació de una observación simple: quien escribe algo que

@@ -228,3 +228,88 @@ describe('las páginas en inglés conservan la estructura', () => {
     expect(portadaEn).toContain('class="correo-tarifa"');
   });
 });
+
+// ── Las tarjetas sociales ────────────────────────────────────────────
+//
+// Cada idioma tiene la suya, y servir la equivocada no se nota nunca
+// desde el sitio: la tarjeta solo aparece cuando alguien pega el enlace
+// en WhatsApp, y para entonces ya viajó. En México y Perú ese enlace
+// viaja sobre todo por WhatsApp, así que es la etiqueta que más gente ve
+// antes de entrar.
+//
+// Los `?url` no son decorativos: si el archivo no existe, el import
+// revienta en la compilación en vez de dejar la tarjeta sin imagen.
+import tarjetaEs from '../public/img/AIDesk_Card_v1_SP.png?url';
+import tarjetaEn from '../public/img/AIDesk_Card_v1_EN.png?url';
+
+describe('las tarjetas sociales', () => {
+  /** Las medidas reales del PNG, medidas de su cabecera IHDR. */
+  const ANCHO = 1057;
+  const ALTO = 595;
+
+  const meta = (html: string, clave: string): string =>
+    html.match(
+      new RegExp(`<meta (?:property|name)="${clave}" content="([^"]+)"`)
+    )?.[1] ?? '';
+
+  it('los dos archivos existen y se empaquetan', () => {
+    expect(tarjetaEs).toContain('AIDesk_Card_v1_SP');
+    expect(tarjetaEn).toContain('AIDesk_Card_v1_EN');
+  });
+
+  it('cada idioma sirve SU tarjeta, no la del otro', () => {
+    for (const p of PAGINAS) {
+      const esperada = p.lang.startsWith('es')
+        ? 'AIDesk_Card_v1_SP.png'
+        : 'AIDesk_Card_v1_EN.png';
+      const prohibida = p.lang.startsWith('es')
+        ? 'AIDesk_Card_v1_EN.png'
+        : 'AIDesk_Card_v1_SP.png';
+      for (const clave of ['og:image', 'twitter:image']) {
+        expect(`${p.nombre} ${clave}`).toBe(`${p.nombre} ${clave}`);
+        expect(meta(p.html, clave)).toContain(esperada);
+        expect(meta(p.html, clave)).not.toContain(prohibida);
+      }
+    }
+  });
+
+  // Ningún raspador social resuelve rutas relativas: un `/img/…` aquí
+  // deja la tarjeta sin imagen en cada enlace compartido.
+  it('la URL de la tarjeta es absoluta en las cuatro', () => {
+    for (const p of PAGINAS) {
+      expect(`${p.nombre}: ${meta(p.html, 'og:image')}`).toMatch(
+        /: https:\/\/aidesk\.aideatext\.ai\/img\//
+      );
+    }
+  });
+
+  // Las medidas declaradas son las del archivo. Si no coinciden, el
+  // raspador reserva una caja de otra proporción y la imagen sale
+  // recortada o con bandas — y es de lo último que uno mira.
+  it('declara las medidas reales del PNG', () => {
+    for (const p of PAGINAS) {
+      expect(`${p.nombre}: ${meta(p.html, 'og:image:width')}`).toBe(
+        `${p.nombre}: ${ANCHO}`
+      );
+      expect(`${p.nombre}: ${meta(p.html, 'og:image:height')}`).toBe(
+        `${p.nombre}: ${ALTO}`
+      );
+    }
+  });
+
+  it('declara el tipo correcto: son PNG, no el JPG anterior', () => {
+    for (const p of PAGINAS) {
+      expect(`${p.nombre}: ${meta(p.html, 'og:image:type')}`).toBe(
+        `${p.nombre}: image/png`
+      );
+      expect(p.html).not.toContain('AIdeaTextCard.jpg');
+    }
+  });
+
+  it('el texto alternativo describe la tarjeta, no repite «AIdeaText»', () => {
+    for (const p of PAGINAS) {
+      expect(meta(p.html, 'og:image:alt')).toMatch(/^AIDesk — /);
+      expect(meta(p.html, 'og:image:alt').length).toBeGreaterThan(20);
+    }
+  });
+});
