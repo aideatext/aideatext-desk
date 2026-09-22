@@ -67,7 +67,7 @@ export const CONTACTO = 'first.contact.desk@aideatext.ai';
  * producto qué institución añadir.
  */
 export const MENSAJE_NO_ESTA_EN_LA_LISTA =
-  `¿Tu universidad no aparece? Escríbenos a ${CONTACTO} y la agregamos.`;
+  `¿Tu institución no aparece? Escríbenos a ${CONTACTO} y la agregamos.`;
 
 /**
  * Extrae el dominio normalizado de un correo, o `null` si no lo parece.

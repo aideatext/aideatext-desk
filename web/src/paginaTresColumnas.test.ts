@@ -228,8 +228,37 @@ describe('columna 3: traduccion, sin producto todavia', () => {
   });
 
   it('describe un caso de uso propio y verdadero', () => {
-    expect(trad()).toMatch(/congreso internacional/);
-    expect(trad()).toMatch(/inglés/);
+    expect(trad()).toMatch(/exponer en inglés/);
+    expect(trad()).toMatch(/escuchándolo en español/);
+  });
+});
+
+// El sitio se escribió entero suponiendo que quien llega está haciendo una
+// tesis, y no es así: sirve para cualquier documento. Estas pruebas fijan
+// la corrección donde más se nota —el título, la tarjeta que viaja por
+// WhatsApp y la primera frase de cada columna— porque es la clase de copy
+// que se reescribe sin darse cuenta.
+describe('el sitio no es solo para tesis', () => {
+  it('el título y la tarjeta social hablan de documentos', () => {
+    const cabeza = html.slice(0, html.indexOf('</head>'));
+    expect(cabeza).toMatch(/<title>[^<]*documentos/);
+    expect(cabeza).not.toMatch(/<title>[^<]*tu tesis/i);
+    expect(cabeza).toMatch(/og:title" content="[^"]*documentos/);
+  });
+
+  // «Tesis» no desaparece: sigue siendo el mejor ejemplo concreto que
+  // tenemos. Lo que no puede es ser el ÚNICO — un ejemplo solo se lee
+  // como la definición del público.
+  it('cada columna nombra más de un tipo de documento', () => {
+    const ejemplos = /tesis|informe|expediente|manual|contrato|propuesta|ponencia|libro|peritaje/gi;
+    for (const [i, col] of columnas.entries()) {
+      const encontrados = new Set(
+        (prosa(col).match(ejemplos) ?? []).map((x) => x.toLowerCase())
+      );
+      expect(`col${i + 1}: ${[...encontrados].join(',')}`).toMatch(
+        /,/
+      );
+    }
   });
 });
 

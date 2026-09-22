@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light" />
 
-  <title>AIDesk — Pasa tu tesis a la IA completa, sin subirla a ningún servidor</title>
+  <title>AIDesk — Pasa tus documentos a la IA completos, sin subirlos a ningún servidor</title>
   <meta name="description"
-        content="AIDesk convierte tu PDF en un archivo de texto (.md) que ChatGPT, Claude o Gemini leen entero. La conversión ocurre en tu navegador: el archivo no se sube a ningún servidor, y puedes comprobarlo tú mismo." />
+        content="AIDesk convierte cualquier PDF —tesis, informe, expediente, manual— en un archivo de texto (.md) que ChatGPT, Claude o Gemini leen entero. La conversión ocurre en tu navegador: el archivo no se sube a ningún servidor, y puedes comprobarlo tú mismo." />
 
   <!-- Iconos: el logotipo de AIdeaText, servido desde este dominio.
        `img-src 'self' data:` de la CSP ya permite imagenes locales; no hizo
@@ -19,7 +19,8 @@
   <!-- ===== Metadatos sociales =====
        Open Graph cubre WhatsApp, Facebook e Instagram: Instagram no tiene
        etiquetas propias, lee Open Graph. Para Mexico y Peru, WhatsApp es
-       probablemente el canal que mas enlaces mueve entre tesistas, asi que
+       probablemente el canal que mas enlaces mueve entre quienes escriben,
+       asi que
        estas cuatro lineas importan mas que la landing entera en escritorio.
 
        Hablan solo del servicio 1, que es el unico construido. Anunciar el
@@ -36,18 +37,18 @@
   <meta property="og:site_name" content="AIdeaText" />
   <meta property="og:locale" content="es_MX" />
   <meta property="og:url" content="https://desk.aideatext.ai/" />
-  <meta property="og:title" content="Pasa tu tesis a la IA completa, sin subirla a ningún servidor" />
+  <meta property="og:title" content="Pasa tus documentos a la IA completos, sin subirlos a ningún servidor" />
   <meta property="og:description"
-        content="AIDesk convierte tu PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube, y te lo demostramos en vivo." />
+        content="AIDesk convierte cualquier PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube, y te lo demostramos en vivo." />
   <meta property="og:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
   <meta property="og:image:width" content="1920" />
   <meta property="og:image:height" content="1080" />
   <meta property="og:image:alt" content="AIdeaText" />
 
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Pasa tu tesis a la IA completa, sin subirla a ningún servidor" />
+  <meta name="twitter:title" content="Pasa tus documentos a la IA completos, sin subirlos a ningún servidor" />
   <meta name="twitter:description"
-        content="AIDesk convierte tu PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube." />
+        content="AIDesk convierte cualquier PDF en un archivo .md que ChatGPT, Claude o Gemini leen entero. Ocurre en tu navegador: nada se sube." />
   <meta name="twitter:image" content="https://desk.aideatext.ai/img/AIdeaTextCard.jpg" />
   <meta name="twitter:image:alt" content="AIdeaText" />
 
@@ -672,6 +673,12 @@
        franja dejaba 189px en blanco justo debajo de las columnas. */
     @media (max-width: 1199px) {
       .banda .argumento { display: none; }
+      /* Con la pantalla estrecha el aviso ocupa mas lineas y la seccion
+         se pasaba 16px, cortando su boton. Se aprieta la caja, no el
+         texto: lo que dice el aviso es lo que no se puede recortar. */
+      .banda { padding: .35rem .65rem; gap: .25rem; }
+      .banda h2 { font-size: .93rem; }
+      .banda p { font-size: .82rem; }
     }
 
     /* Sin parrafo, el cierre es solo el boton: la regla de separacion no
@@ -756,8 +763,14 @@
        desplazaba, asi que no habia forma de llegar a ellos: no era un
        apretujon, era contenido inalcanzable. Entre 900 y 1150 de ancho
        este contenido no cabe en tres columnas, y apilarlo es mejor que
-       recortarlo. */
-    @media (max-width: 1149px) {
+       recortarlo.
+
+       LA SEGUNDA CONDICION cubre lo estrecho Y bajo a la vez: a 1152x640
+       hay ancho de sobra para tres columnas pero no alto, y se cortaban
+       dos botones de pago. Ancho y alto por separado dan el visto bueno;
+       es la combinacion la que no cabe. */
+    @media (max-width: 1149px),
+           (max-width: 1199px) and (max-height: 699px) {
       body {
         display: block;
         height: auto;
@@ -895,10 +908,10 @@
            botones de OCR: a 1280x600 esta columna desbordaba 157px y los
            dos botones de pago caian fuera de la pantalla. -->
       <p>
-        Tu tesis, en un archivo que ChatGPT, Claude o Gemini leen
-        <strong>entero y bien estructurado</strong> —con sus títulos, listas
-        y tablas en su sitio—. Gratis, sin tope de páginas y sin que el
-        archivo salga de tu navegador.
+        Tu documento —tesis, informe, expediente, manual— en un archivo
+        que ChatGPT, Claude o Gemini leen <strong>entero y bien
+        estructurado</strong>, con títulos, listas y tablas en su sitio.
+        Gratis, sin tope de páginas y sin que salga de tu navegador.
       </p>
 
       <details class="porque">
@@ -972,9 +985,9 @@
            cuarto boton de pago caia fuera del corte. Lo que sobraba era
            prosa; los botones no se tocan. -->
       <p>
-        Te toma entre una y dos horas llegar a la universidad o volver a
-        casa. Leer en el metro o el metrobús es incómodo; escuchar, no.
-        Escucha tu tesis, tu ensayo o el capítulo que te toca esta semana.
+        Entre una y dos horas de trayecto al trabajo o a casa. Leer en el
+        metro es incómodo; escuchar, no. Escucha lo que te toca esta
+        semana: una tesis, un informe, un contrato, un capítulo.
       </p>
 
       <!-- SIN tabla de precios, y no por falta de sitio: la tabla decia
@@ -998,8 +1011,8 @@
       <p class="condicion">
         <strong>Estudiantes y organizaciones sin fines de lucro</strong> pagan
         la mitad; exige un correo institucional validado.
-        <strong>Empresas y profesionales</strong>, la tarifa de al lado. Lo
-        hacemos a mano: al pagar te escribimos por tu archivo y el plazo.
+        <strong>Empresas y profesionales</strong>, al lado. Lo hacemos a
+        mano: al pagar te escribimos por tu archivo y el plazo.
       </p>
 
       <div class="tarifa">
@@ -1042,11 +1055,10 @@
       </h2>
 
       <p>
-        Te aceptaron la ponencia en un congreso internacional y tienes que
-        exponerla en inglés; o el artículo que ya escribiste en español hay
-        que enviarlo en inglés; o la bibliografía obligatoria está en inglés
-        y la entiendes mucho mejor escuchándola en español. Traducimos y te
-        entregamos el audio en el otro idioma.
+        Tienes que exponer en inglés lo que escribiste en español —una
+        ponencia, una propuesta, un informe—; o al revés, lo que te toca
+        leer está en inglés y lo entiendes mejor escuchándolo en español.
+        Traducimos y te entregamos el audio en el otro idioma.
       </p>
 
       <!-- SIN tabla de precios, y es deliberado. Los otros dos servicios
@@ -1205,7 +1217,8 @@
         <div class="plegado">
           <h3>No sube nada</h3>
           <p>
-            No recibimos tu tesis, y no podríamos aunque quisiéramos: este
+            No recibimos tu documento, y no podríamos aunque quisiéramos:
+            este
             sitio declara una política de seguridad
             (<code>connect-src 'self'</code>) que le prohíbe al navegador
             enviar datos a otro servidor.
@@ -1249,9 +1262,10 @@
             en los programas NVIDIA Inception y AWS Startups.
           </p>
           <p>
-            AIDesk nació de una observación simple: los tesistas no necesitan
-            otra herramienta de IA. Necesitan que su trabajo inédito no
-            termine en el servidor de un desconocido.
+            AIDesk nació de una observación simple: quien escribe algo que
+            todavía no ha publicado —una tesis, un peritaje, una propuesta,
+            un expediente— no necesita otra herramienta de IA. Necesita que
+            su trabajo no termine en el servidor de un desconocido.
           </p>
           <p>
             <a href="mailto:mv@aideatext.com">mv@aideatext.com</a> ·

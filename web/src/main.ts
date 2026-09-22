@@ -44,7 +44,7 @@ input.addEventListener('change', () => {
   // Se limpia el valor SIEMPRE, antes de procesar. Un input de archivo no
   // dispara `change` si el usuario vuelve a elegir el mismo archivo, asi
   // que sin esto el reintento tras un error no hace absolutamente nada:
-  // el usuario hace clic, elige su tesis otra vez, y la pantalla no
+  // el usuario hace clic, elige su archivo otra vez, y la pantalla no
   // cambia. Es el mismo callejon silencioso del boton mudo, entrando por
   // otra puerta -- y justo en el camino de salida del error.
   input.value = '';
