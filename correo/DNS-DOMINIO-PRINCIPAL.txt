@@ -1,0 +1,44 @@
+REGISTROS PARA ENVIAR DESDE manuel.var.ale@aideatext.ai
+Zona: aideatext.ai
+
+=====================================================================
+ LEE ESTO PRIMERO
+=====================================================================
+El SPF NO es un registro nuevo: YA EXISTE y hay que EDITARLO.
+
+  Valor actual:
+    v=spf1 include:spf.titan.email include:spf.brevo.com -all
+
+  Valor nuevo (se AÑADE outlook, no se sustituye nada):
+    v=spf1 include:spf.titan.email include:spf.brevo.com include:spf.protection.outlook.com -all
+
+Si lo sustituyes por lo que dice Azure a secas, el correo que envias hoy
+desde Titan deja de autenticar y empieza a caer en spam. Es un solo
+registro y es el unico peligroso de los cuatro.
+=====================================================================
+
+1) TXT  -- verificacion del dominio   [NUEVO]
+   Name   : @        (o aideatext.ai)
+   Content: ms-domain-verification=1b64abc2-2c9e-4f80-aa46-c7783818c741
+
+2) TXT  -- SPF                        [EDITAR EL QUE YA EXISTE]
+   Name   : @
+   Content: v=spf1 include:spf.titan.email include:spf.brevo.com include:spf.protection.outlook.com -all
+
+3) CNAME -- DKIM 1                    [NUEVO]  <-- NUBE GRIS
+   Name   : selector1-azurecomm-prod-net._domainkey
+   Target : selector1-azurecomm-prod-net._domainkey.azurecomm.net
+   Proxy  : DNS only
+
+4) CNAME -- DKIM 2                    [NUEVO]  <-- NUBE GRIS
+   Name   : selector2-azurecomm-prod-net._domainkey
+   Target : selector2-azurecomm-prod-net._domainkey.azurecomm.net
+   Proxy  : DNS only
+
+---------------------------------------------------------------------
+NOTA: estos DKIM van SIN «.correo» al final, porque son del dominio
+raiz. Los del subdominio que ya pusiste llevaban «.correo» y esos se
+quedan como estan: los dos juegos conviven sin pisarse.
+
+El limite de SPF son 10 consultas DNS. Con titan + brevo + outlook vas
+en tres. Hay margen.

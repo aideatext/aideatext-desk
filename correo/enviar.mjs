@@ -40,7 +40,20 @@ import { readFileSync, appendFileSync, existsSync } from 'node:fs';
 import { EmailClient } from '@azure/communication-email';
 import { createInterface } from 'node:readline/promises';
 
-const REMITENTE = 'AIDesk <hola@correo.aideatext.ai>';
+/**
+ * EL REMITENTE ES SU DIRECCION DE SIEMPRE, no el subdominio.
+ *
+ * Se monto primero `hola@correo.aideatext.ai` para aislar la reputacion
+ * del envio masivo del correo de trabajo. El dueño prefiere que salga de
+ * su direccion, y tiene un argumento mejor: estos 45 le conocen de un
+ * curso. Un correo de «AIDesk» les dice poco; uno de Manuel Vargas
+ * Alegria lo abren.
+ *
+ * El subdominio sigue verificado y enlazado. Si algun dia hay una lista
+ * de gente que NO le conoce, ese es su sitio: alli un rebote alto no
+ * toca la reputacion de `aideatext.ai`.
+ */
+const REMITENTE = 'Manuel Vargas Alegria <manuel.var.ale@aideatext.ai>';
 const RESPONDER_A = 'first.contact@aideatext.ai';
 const ASUNTO = 'Una herramienta para tus PDF (gratis, y no sube nada)';
 const LISTA = '../EMAILS/emails_test_aidesk.csv';
