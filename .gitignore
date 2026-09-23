@@ -68,3 +68,7 @@ EMAILS/
 # Registro de envios: contiene direcciones de destinatarios.
 correo/enviados.log
 correo/node_modules/
+
+# Salida de la tarea programada: imprime cada direccion segun la envia,
+# asi que es la lista entera en texto plano.
+correo/registro-campana.txt

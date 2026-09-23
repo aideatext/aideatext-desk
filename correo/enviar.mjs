@@ -58,6 +58,8 @@ const RESPONDER_A = 'first.contact@aideatext.ai';
 const ASUNTO = 'Una herramienta para tus PDF (gratis, y no sube nada)';
 const LISTA = '../EMAILS/emails_test_aidesk.csv';
 const REGISTRO = 'enviados.log';
+/** A quién se le avisa cuando termina la campaña. */
+const AVISAR_A = 'manuel.var.ale@aideatext.ai';
 /** Por debajo del límite de Azure (30/min) a propósito. */
 const PAUSA_MS = 2500;
 
@@ -141,6 +143,79 @@ function yaEnviados() {
   );
 }
 
+
+/**
+ * La cadena de conexión de Azure.
+ *
+ * Primero mira el entorno; si no está, se la pide a `az`, que ya está
+ * autenticado en esta máquina.
+ *
+ * ASÍ NO HAY NINGÚN SECRETO GUARDADO. Ni en el repositorio, ni en un
+ * archivo de configuración, ni en una variable de usuario de Windows que
+ * sobreviva al reinicio. La tarea programada se ejecuta sin llevar la
+ * clave encima: la pide cuando le hace falta y la olvida al terminar.
+ */
+async function obtenerConexion() {
+  if (process.env.ACS_CONEXION) return process.env.ACS_CONEXION;
+  const { execFileSync } = await import('node:child_process');
+  try {
+    const salida = execFileSync(
+      'az',
+      ['communication', 'list-key', '--name', 'aidesk-acs',
+       '--resource-group', 'appsvc_linux_centralus',
+       '--query', 'primaryConnectionString', '-o', 'tsv'],
+      { encoding: 'utf8', shell: true, stdio: ['ignore', 'pipe', 'ignore'] }
+    ).trim();
+    if (!salida) throw new Error('vacía');
+    return salida;
+  } catch {
+    throw new Error(
+      'No hay ACS_CONEXION en el entorno y `az` no pudo darla. ' +
+      'Comprueba que la sesión de Azure sigue abierta: az account show'
+    );
+  }
+}
+
+/**
+ * El informe de lo que pasó, al correo del dueño.
+ *
+ * Se manda SIEMPRE, hayan salido todos o no. Una campaña que se ejecuta
+ * sola de madrugada y no avisa es una campaña que nadie sabe si ocurrió,
+ * y el silencio se interpreta como éxito justo cuando no lo es.
+ */
+async function avisar(cliente, resumen) {
+  const { total, bien, mal, fallos, comenzo } = resumen;
+  const minutos = Math.round((Date.now() - comenzo) / 60000);
+  const hayFallos = mal > 0;
+  const lineas = [
+    `Enviados : ${bien} de ${total}`,
+    `Fallos   : ${mal}`,
+    `Duración : ${minutos} min`,
+    `Remitente: ${REMITENTE}`,
+    `Asunto   : ${ASUNTO}`,
+  ];
+  if (hayFallos) {
+    lineas.push('', 'DIRECCIONES QUE FALLARON:');
+    for (const f of fallos) lineas.push(`  ${f.correo}  —  ${f.error}`);
+    lineas.push('', 'Para reintentar solo esas: node enviar.mjs --enviar');
+    lineas.push('(el registro ya sabe a quién no hay que repetir)');
+  }
+  const texto = lineas.join('\n');
+  await (await cliente.beginSend({
+    senderAddress: REMITENTE.match(/<(.+)>/)[1],
+    content: {
+      subject: hayFallos
+        ? `⚠ Campaña AIDesk: ${bien}/${total} enviados, ${mal} fallos`
+        : `✓ Campaña AIDesk: ${bien}/${total} enviados`,
+      plainText: texto,
+      html: `<pre style="font-family:monospace;font-size:14px;line-height:1.5;">${
+        texto.replace(/</g, '&lt;')
+      }</pre>`,
+    },
+    recipients: { to: [{ address: AVISAR_A }] },
+  })).pollUntilDone();
+}
+
 // ── El mensaje ───────────────────────────────────────────────────────
 
 function componer(destinatario) {
@@ -195,8 +270,7 @@ Saludos: ${buenos.length - genericos} con nombre, ${genericos} genéricos`);
     return;
   }
 
-  const conexion = process.env.ACS_CONEXION;
-  if (!conexion) throw new Error('Falta ACS_CONEXION en el entorno');
+  const conexion = await obtenerConexion();
   const cliente = new EmailClient(conexion);
 
   if (modo === '--prueba') {
@@ -209,8 +283,26 @@ Saludos: ${buenos.length - genericos} con nombre, ${genericos} genéricos`);
     return;
   }
 
+  // El informe de una campaña que ya salió llega demasiado tarde para
+  // descubrir que el informe no funciona. Esto lo ejercita antes, con
+  // datos inventados y un fallo dentro, que es el caso que de verdad
+  // importa que llegue.
+  if (modo === '--informe-prueba') {
+    await avisar(cliente, {
+      total: 45,
+      bien: 44,
+      mal: 1,
+      fallos: [{ correo: 'ejemplo@dominio-inexistente.test', error: 'Recipient domain not found' }],
+      comenzo: Date.now() - 3 * 60 * 1000,
+    });
+    console.log(`\nInforme de prueba enviado a ${AVISAR_A}\n`);
+    return;
+  }
+
   if (modo !== '--enviar') {
-    console.log('\nUso:\n  --ensayo\n  --prueba tu@correo.com\n  --enviar\n');
+    console.log(
+      '\nUso:\n  --ensayo\n  --prueba tu@correo.com\n  --informe-prueba\n  --enviar\n'
+    );
     return;
   }
 
@@ -218,13 +310,25 @@ Saludos: ${buenos.length - genericos} con nombre, ${genericos} genéricos`);
   const pendientes = buenos.filter((d) => !hechos.has(d.correo));
   console.log(`Ya enviados: ${hechos.size}   Pendientes: ${pendientes.length}`);
 
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const ok = await rl.question(`\n¿Enviar a ${pendientes.length} personas? Escribe ENVIAR: `);
-  rl.close();
-  if (ok.trim() !== 'ENVIAR') return console.log('Cancelado.\n');
+  // `--programado` salta la confirmación. Lo usa la tarea programada, que
+  // corre sin nadie delante del teclado y no puede escribir ENVIAR.
+  //
+  // La confirmación sigue existiendo para todo lo demás: la autorización
+  // de una campaña desatendida se da AL PROGRAMARLA, no a las nueve de la
+  // mañana siguiente. Quien teclea el comando a mano vuelve a pasar por
+  // el aviso.
+  const desatendido = args.includes('--programado');
+  if (!desatendido) {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const ok = await rl.question(`\n¿Enviar a ${pendientes.length} personas? Escribe ENVIAR: `);
+    rl.close();
+    if (ok.trim() !== 'ENVIAR') return console.log('Cancelado.\n');
+  }
 
+  const comenzo = Date.now();
   let bien = 0;
   let mal = 0;
+  const fallos = [];
   for (const [i, d] of pendientes.entries()) {
     try {
       const op = await cliente.beginSend(componer(d));
@@ -234,6 +338,7 @@ Saludos: ${buenos.length - genericos} con nombre, ${genericos} genéricos`);
       console.log(`  ${i + 1}/${pendientes.length}  ${d.correo}  ${r.status}`);
     } catch (err) {
       mal++;
+      fallos.push({ correo: d.correo, error: err.message });
       // Se registra el fallo Y se sigue. Un rebote no puede detener la
       // campaña, pero tampoco puede desaparecer sin dejar rastro.
       appendFileSync(REGISTRO, `${new Date().toISOString()}\t${d.correo}\tERROR\t${err.message}\n`);
@@ -242,9 +347,47 @@ Saludos: ${buenos.length - genericos} con nombre, ${genericos} genéricos`);
     if (i < pendientes.length - 1) await dormir(PAUSA_MS);
   }
   console.log(`\nEnviados: ${bien}   Fallos: ${mal}\n`);
+
+  // El informe. Va DENTRO de su propio try: si el aviso falla, la campaña
+  // ya salió y no tiene sentido que el script muera con un código de error
+  // que haga pensar que no se envió nada.
+  try {
+    await avisar(cliente, { total: pendientes.length, bien, mal, fallos, comenzo });
+    console.log(`Informe enviado a ${AVISAR_A}\n`);
+  } catch (err) {
+    console.error(`No se pudo enviar el informe a ${AVISAR_A}: ${err.message}`);
+    console.error('La campaña SÍ salió. El detalle está en ' + REGISTRO + '\n');
+  }
 }
 
-main().catch((e) => {
+main().catch(async (e) => {
   console.error('\n' + e.message + '\n');
+
+  // Si la campaña ni siquiera arrancó —`az` sin sesión, el CSV movido de
+  // sitio, la cuota agotada— hay que decirlo. Una tarea programada que
+  // falla en silencio se interpreta como una tarea que funcionó, y el
+  // engaño solo se descubre semanas después, al no llegar respuestas.
+  if (process.argv.includes('--programado')) {
+    try {
+      const { EmailClient } = await import('@azure/communication-email');
+      const cliente = new EmailClient(await obtenerConexion());
+      await (await cliente.beginSend({
+        senderAddress: REMITENTE.match(/<(.+)>/)[1],
+        content: {
+          subject: '⚠ Campaña AIDesk: NO se envió',
+          plainText:
+            `La tarea programada falló antes de mandar ningún correo.\n\n${e.message}\n\n` +
+            'Nadie ha recibido nada. Los destinatarios siguen pendientes:\n' +
+            'node enviar.mjs --enviar',
+        },
+        recipients: { to: [{ address: AVISAR_A }] },
+      })).pollUntilDone();
+      console.error(`Aviso de fallo enviado a ${AVISAR_A}\n`);
+    } catch {
+      // Sin correo no hay nada más que hacer: queda el registro de la
+      // tarea programada, que es donde se mira cuando no llegó el aviso.
+      console.error('Tampoco se pudo avisar por correo.\n');
+    }
+  }
   process.exit(1);
 });
